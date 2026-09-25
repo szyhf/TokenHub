@@ -115,18 +115,34 @@ func (q *statementQuery) window() (time.Time, time.Time, error) {
 }
 
 func (s *Server) handleBillingStatement(w http.ResponseWriter, r *http.Request) {
-	user, ok := s.requireAdmin(w, r, "billing", r.Method)
+	user, ok := s.requireAdmin(w, r, "billing_statement", r.Method)
 	if !ok {
 		return
 	}
-	if normalizeAdminRole(user.Role) != "admin" {
-		writeError(w, r, NewHTTPError(403, "admin_forbidden", "Only platform administrators can generate statements"))
+	role := normalizeAdminRole(user.Role)
+	if !isPlatformAdminRole(role) && role != "team_leader" {
+		writeError(w, r, NewHTTPError(403, "admin_forbidden", "Only platform administrators and team leaders can generate statements"))
 		return
 	}
 	var q statementQuery
 	if err := s.decodeJSON(w, r, &q); err != nil {
 		writeError(w, r, err)
 		return
+	}
+	if role == "team_leader" {
+		scoped, empty, err := s.scopeStatementQueryForTeamLeader(user, q)
+		if err != nil {
+			writeError(w, r, err)
+			return
+		}
+		if empty {
+			writeJSON(w, http.StatusOK, statementResult{
+				Query: q, GeneratedAt: time.Now().UTC(),
+				TimeBasis: "request_admission", Rows: []statementRow{}, Totals: map[string]string{},
+			})
+			return
+		}
+		q = scoped
 	}
 	if _, _, err := q.window(); err != nil {
 		writeError(w, r, err)

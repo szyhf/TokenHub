@@ -41,6 +41,10 @@ Model price updates reject non-finite or negative base prices. Legacy Provider z
 
 ## Cost statements
 
+### Team leader tenant statements
+
+Team leaders can generate their own tenant-side statement through the same `POST /api/admin/billing/statements` endpoint. The server forces `side=tenant`, drops provider filters, fills the customer from the team, and intersects the project list with the team's projects; provider and margin sides, connector management, and provider reconciliation stay administrator-only. The console hides the statement-type switch for team leaders.
+
 Platform administrators can open statements from Billing, public model rows, or Provider model cost settings. Choose a date range (exclusive end, up to 93 days) and time zone, preview, then export CSV. Export uses the exact preview payload; changing filters clears it. Statements do not confirm agreement or payment.
 
 Customer statements require a customer label and explicit project selection. The label does not create a tenant or grant access. Projects, captured teams and API keys provide detail; exports omit supplier identities and procurement prices. Historical team attribution uses admission snapshots.
@@ -49,6 +53,6 @@ Provider statements include individual attempts and retries. Local estimates and
 
 Estimated margin uses recorded customer charges minus local costs of the same requests, including cross-month retries; it is not net profit or cash balance. Unknown cost, missing FX, incomplete historical evidence or unfinished attempts suppress the margin number. Supplier totals do not replace request costs. Shadow rate cards do not change actual customer charges. Historical prices are displayed only when they explain recorded amounts; old rows without snapshots use completion time and remain marked incomplete. Legacy zero provider cost is unknown, not retail price or proof of free service; explicit zero-price evidence remains zero. Request charging and confirmation/dispute/payment workflows are unchanged.
 
-The read-only POST /api/admin/billing/statements endpoint is platform-admin-only. JSON fields: side (tenant/provider/margin), from, to (YYYY-MM-DD), timezone, customer, project_ids, and optional provider_id, resource_id, model. Tenant requires customer and projects; tenant/margin reject supplier filters. Provider model filters use upstream names, others use public names. Results exceeding 10,000 rows fail instead of truncating; narrow the range or filters.
+The read-only POST /api/admin/billing/statements endpoint serves platform administrators and, for the tenant side only, team leaders scoped to their own team's projects. JSON fields: side (tenant/provider/margin), from, to (YYYY-MM-DD), timezone, customer, project_ids, and optional provider_id, resource_id, model. Tenant requires customer and projects; tenant/margin reject supplier filters. Provider model filters use upstream names, others use public names. Results exceeding 10,000 rows fail instead of truncating; narrow the range or filters.
 
 External billing records snapshot Provider and resource attribution at ingestion. Legacy rows are backfilled once, before a connector is changed or deleted and before a provider statement is generated, using the attribution available at upgrade time. Reimport preserves the original snapshot; changes made before upgrade cannot be reconstructed. Period filtering excludes non-instantaneous records ending exactly at the start boundary before applying the row limit. Reconciliation fails with `reconciliation_provider_cost_unknown` when a legacy zero has no cost evidence; explicit zero requires a known-cost projection or matching persisted versioned price and zero-charge evidence. Unknown cost cannot match a zero supplier bill.

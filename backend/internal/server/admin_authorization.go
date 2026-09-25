@@ -68,9 +68,12 @@ func canAdmin(role string, resource string, method string) bool {
 				// owned by their own team; object-level ownership is
 				// enforced by the provider and route tenancy checks in the
 				// handlers.
-				resource == "provider" || resource == "routing"
+				resource == "provider" || resource == "routing" ||
+				// The tenant statement is the team leader's own bill; the
+				// handler forces the tenant side and the team's projects.
+				resource == "billing_statement"
 		}
-		return resource == "overview" || resource == "project" || resource == "api_key" || resource == "usage" || resource == "audit" || resource == "identity" || resource == "approval" || resource == "quota" || resource == "provider" || resource == "routing"
+		return resource == "overview" || resource == "project" || resource == "api_key" || resource == "usage" || resource == "audit" || resource == "identity" || resource == "approval" || resource == "quota" || resource == "provider" || resource == "routing" || resource == "billing_statement"
 	case "user":
 		if write {
 			return resource == "api_key" || resource == "playground"

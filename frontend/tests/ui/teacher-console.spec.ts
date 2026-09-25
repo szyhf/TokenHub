@@ -33,3 +33,15 @@ teacherTest("teacher-console provider ownership scope", async ({ page, api }, te
   await expect(page.locator(".app-shell")).toBeVisible();
   await capture(page, testInfo, page.locator(".app-shell"), "teacher-routes-workspace", "老师路由策略工作台", "viewport");
 });
+
+teacherTest("teacher-console billing shows tenant statement only", async ({ page, api }, testInfo) => {
+  api.respond("GET", "/api/admin/users", { data: [] });
+  await page.goto("/billing");
+  const statement = page.locator("section.section").filter({ has: page.getByRole("heading", { name: "费用对账单", exact: true }) });
+  await expect(statement).toBeVisible();
+  // The single-side teacher statement hides the side switcher entirely.
+  await expect(statement.getByLabel("对账单类型")).toHaveCount(0);
+  await expect(statement.getByLabel("客户项目（可多选）")).toBeVisible();
+  await expect(statement.getByRole("button", { name: "预览对账单", exact: true })).toBeVisible();
+  await capture(page, testInfo, statement, "teacher-billing-tenant-statement", "老师租户侧费用对账单");
+});

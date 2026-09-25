@@ -616,6 +616,7 @@ export function BillingView({
     <>
       {appRole(user.role) === "admin" ? <BillingRateCards api={api} data={data} /> : null}
       {appRole(user.role) === "admin" ? <BillingStatements api={api} /> : null}
+      {appRole(user.role) === "team_leader" ? <BillingStatements api={api} sides={["tenant"]} /> : null}
       {appRole(user.role) === "admin" ? <BillingConnectorManager api={api} data={data} loading={loading} onReload={onReload} /> : null}
       {appRole(user.role) === "admin" ? <ReconciliationManager api={api} data={data} loading={loading} onReload={onReload} /> : null}
       {showMemberBreakdown ? (

@@ -8,7 +8,7 @@ import { languageLocale, tx } from "../i18n/runtime";
 import { adminFetch, readAdminError } from "../resources/payloads";
 import { DataSection, SimpleTable } from "../shared/ui";
 
-type StatementProps = { api: ApiContext; side?: StatementSide; model?: string; providerID?: string };
+type StatementProps = { api: ApiContext; side?: StatementSide; model?: string; providerID?: string; sides?: StatementSide[] };
 
 export function StatementLauncher(props: StatementProps) {
   const [open, setOpen] = useState(false);
@@ -20,7 +20,8 @@ export function StatementLauncher(props: StatementProps) {
   </>;
 }
 
-export function BillingStatements({ api, side = "tenant", model = "", providerID = "" }: StatementProps) {
+export function BillingStatements({ api, side = "tenant", model = "", providerID = "", sides }: StatementProps) {
+  const sideOptions = sides ?? ["tenant", "provider", "margin"];
   const [query, setQuery] = useState<StatementQuery>(() => ({ side, ...statementMonth(), timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC", customer: "", project_ids: [], provider_id: providerID, resource_id: "", model }));
   const [projects, setProjects] = useState<{ id: string; name: string }[]>([]);
   const [result, setResult] = useState<StatementResult | null>(null);
@@ -65,9 +66,9 @@ export function BillingStatements({ api, side = "tenant", model = "", providerID
     <p>{tx("仅供费用核对，不代表确认或收付款。导出与当前预览使用同一份数据。")}</p>
     <form onSubmit={event => void preview(event)}>
       <fieldset disabled={busy} className="statement-fields">
-        <label>{tx("对账单类型")}<select value={query.side} onChange={event => change({ side: event.target.value as StatementSide, customer: "", provider_id: "", resource_id: "", model: "", project_ids: [] })}>
-          <option value="tenant">{tx("下游费用对账单")}</option><option value="provider">{tx("上游费用对账单")}</option><option value="margin">{tx("预计毛利汇总")}</option>
-        </select></label>
+        {sideOptions.length > 1 ? <label>{tx("对账单类型")}<select value={query.side} onChange={event => change({ side: event.target.value as StatementSide, customer: "", provider_id: "", resource_id: "", model: "", project_ids: [] })}>
+          {sideOptions.map(option => <option key={option} value={option}>{statementSideLabel(option)}</option>)}
+        </select></label> : null}
         <label>{tx("开始日期")}<input required type="date" value={query.from} onChange={event => change({ from: event.target.value })} /></label>
         <label>{tx("结束日期（不含）")}<input required type="date" value={query.to} onChange={event => change({ to: event.target.value })} /></label>
         <label>{tx("账期时区")}<input required value={query.timezone} onChange={event => change({ timezone: event.target.value })} /></label>
@@ -120,4 +121,12 @@ function statementReason(value?: string) {
   if (value === "full_supplier_amount_not_prorated") return tx("保留供应商全额，未按所选期间分摊");
   if (value === "usage_presence_and_provider_time_basis_unverified") return tx("按历史价格估算，用量及供应商计时依据待核实");
   return tx("证据不完整，不能将未知金额视为零，也不能使用当前价格补算。");
+}
+
+function statementSideLabel(side: StatementSide): string {
+  switch (side) {
+    case "provider": return tx("上游费用对账单");
+    case "margin": return tx("预计毛利汇总");
+    default: return tx("下游费用对账单");
+  }
 }

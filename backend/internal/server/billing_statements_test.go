@@ -178,7 +178,9 @@ func TestBillingStatementValidatesRangeAndScope(t *testing.T) {
 
 func TestBillingStatementRequiresPlatformAdministrator(t *testing.T) {
 	store, app := newMethodRoutingBillingServer(t, "statement-routing-password")
-	for _, role := range []string{"user", "team_leader", "security_admin"} {
+	// Team leaders are entitled to their own tenant statement; every other
+	// non-admin role stays locked out of the statement surface.
+	for _, role := range []string{"user", "security_admin"} {
 		token := createAdminOperationMethodRoutingSession(t, store, "statements-"+role, role)
 		req := httptest.NewRequest(http.MethodPost, "/api/admin/billing/statements", strings.NewReader(`{}`))
 		req.Header.Set("Authorization", "Bearer "+token)
