@@ -188,6 +188,21 @@ The standard model directory and built-in OpenAI Provider inventory include `gpt
 The template uses OpenAI Standard prices per million tokens: $10 input, $1 cached input, $12.50 cache writes, and $50 output. Above 272,000 input tokens, OpenAI doubles input/cache rates and multiplies output rates by 1.5 for the full request. Provider tier metadata records this distinction; the standard template's fixed prices do not automatically apply context tiers or Batch/Flex/Fast discounts and surcharges. Configure applicable pricing separately. See [OpenAI model specifications](https://developers.openai.com/api/docs/models/gpt-6-astra).
 
 
+## Team-Owned Provider Channels
+
+Provider Channels are either platform-owned or team-owned. A team-owned Provider carries an owner team, and only platform administrators plus leaders of that team can see and manage the Provider and its Provider Resources. Platform-owned Providers remain administrator-only.
+
+| Concern | Behavior |
+| --- | --- |
+| Creation | A team leader creates Providers inside their own team automatically. An administrator may create a Provider without an owner (platform) or assign it to an existing team through `owner_team_id`. |
+| Visibility | Team leaders see only their own team's Providers and Resources in lists and monitoring. Administrators see everything. |
+| Ownership changes | `owner_team_id` cannot be changed through the regular update path; administrators reassign ownership by recreating the Provider. |
+| ID reuse | Team leaders cannot create a Provider with an ID that already exists, because Provider creation upserts by primary key. |
+| Egress control | Team-owned Providers pass through the same upstream access policy as platform channels: strict mode, the private CIDR allowlist, and the loopback opt-in. Team leaders cannot bypass it, and the egress probe endpoint stays administrator-only. |
+| Deletion | Deleting a Provider removes its routes, imported inventory, resources, and observations in one transaction, for administrators and owning team leaders alike. |
+
+This is the foundation for delegated classrooms: a teacher brings their own upstream API configuration, manages accounts under it, and the routing layer can then scope model routes to that team.
+
 ## Custom Upstream Request Headers
 
 In **Provider Channels**, add fixed custom request headers under a Provider's connection settings or under a Provider Resource's advanced settings. Provider headers are defaults; a Resource header with the same case-insensitive name overrides the Provider value for that actual routing attempt. This makes per-account failover safe: TokenHub recomputes the effective headers for every selected Resource. For example, set `User-Agent: TokenHub-Custom-Client/1.0` at Provider scope and override `X-Tenant` on individual Resources.

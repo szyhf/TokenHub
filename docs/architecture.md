@@ -148,6 +148,8 @@ The following are the operational built-in Provider registrations. Effective cap
 | `openai_codex` | Responses, streaming Responses, models, probes, quota, OAuth, session affinity, Compact, and image generation |
 | `mock` | Local verification and tests |
 
+The Provider inventory supports team ownership: a Provider row may carry an `owner_team_id`, in which case only platform administrators and the owning team's leaders can manage that channel and its resources. Provider management handlers enforce this at every write path, while routing stays platform-global until routes gain their own team scoping.
+
 ## Model Request Flow
 
 This sequence summarizes the Core request flow. At the applicable stages, the gateway runner projects permitted data to registered hooks and validates their results before Core continues. Hook stages cover privacy/guardrail processing, context and cache operations, candidate selection/ranking, request/response transforms, usage, settlement, and trace export. A declared stage does not mean every endpoint or installed plugin implements that capability; endpoint support and stage rules still apply.

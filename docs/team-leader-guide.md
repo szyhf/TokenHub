@@ -39,6 +39,17 @@ The management API exposes the same operations:
 | `PATCH` | `/api/admin/projects/{project_id}/teams/{team_id}` | Change the linked team's role |
 | `DELETE` | `/api/admin/projects/{project_id}/teams/{team_id}` | Remove a non-primary, non-last team link |
 
+## Connect Your Own Provider Channel
+
+Team leaders can register their own upstream LLM configuration as a team-owned Provider Channel instead of asking an administrator to file one on their behalf.
+
+1. Open **Provider Channels** and create the Provider with your upstream Base URL and API key. The channel is stamped with your team automatically; a requested `owner_team_id` is ignored for team leaders.
+2. Import the upstream model inventory during creation or afterwards. Importing inventory does not expose anything to callers by itself.
+3. Add Provider Resources (accounts) under the channel when you need multiple keys, weights, or cooldown isolation.
+4. Everything is scoped to your team: you only see, edit, test, and delete your own channels and resources, and neither platform channels nor other teams' channels are visible or manageable.
+
+Upstream access policy applies to your channels exactly as it does to platform channels: private or loopback addresses are rejected unless the administrator allows them, and provider creation reusing an existing Provider ID is refused. Deleting a channel removes its routes, imported models, resources, and observations together, so clear dependent routes first if you plan to re-create them.
+
 ## Roll Out a Project Key
 
 1. Create or select a project in **Project Spaces**.

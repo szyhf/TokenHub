@@ -5,16 +5,16 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"sort"
 	"strings"
 	"time"
 )
 
 func (s *Server) handleAdminProvidersGet(w http.ResponseWriter, r *http.Request) {
-	if _, ok := s.requireAdmin(w, r, "provider", r.Method); !ok {
+	user, ok := s.requireAdmin(w, r, "provider", r.Method)
+	if !ok {
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"data": s.store.ListProviders()})
+	writeJSON(w, http.StatusOK, map[string]any{"data": s.filterProvidersForActor(user, s.store.ListProviders())})
 }
 
 func (s *Server) handleAdminProvidersPost(w http.ResponseWriter, r *http.Request) {
@@ -44,6 +44,11 @@ func (s *Server) handleAdminProvidersPost(w http.ResponseWriter, r *http.Request
 		writeError(w, r, err)
 		return
 	}
+	provider.OwnerTeamID = strings.TrimSpace(req.OwnerTeamID)
+	if err := s.applyProviderTenancyOnCreate(user, &provider); err != nil {
+		writeError(w, r, err)
+		return
+	}
 	created := s.store.AddProvider(provider)
 	result := ProviderCreateResult{
 		Provider:      created,
@@ -54,11 +59,42 @@ func (s *Server) handleAdminProvidersPost(w http.ResponseWriter, r *http.Request
 	writeJSON(w, http.StatusCreated, result)
 }
 
+// applyProviderTenancyOnCreate stamps the owning team on a new provider and
+// blocks team leaders from re-creating an existing provider ID, because the
+// store upserts provider rows by primary key.
+func (s *Server) applyProviderTenancyOnCreate(user AdminUser, provider *Provider) *HTTPError {
+	owner, err := s.providerOwnerForCreate(user, provider.OwnerTeamID)
+	if err != nil {
+		return err
+	}
+	provider.OwnerTeamID = owner
+	if isPlatformAdminRole(normalizeAdminRole(user.Role)) {
+		return nil
+	}
+	if provider.ID != "" {
+		if _, exists := s.store.GetProvider(provider.ID); exists {
+			return NewHTTPError(http.StatusConflict, "provider_conflict", "Provider already exists")
+		}
+	}
+	return nil
+}
+
 func (s *Server) handleAdminProviderMonitoring(w http.ResponseWriter, r *http.Request) {
-	if _, ok := s.requireAdmin(w, r, "provider", r.Method); !ok {
+	user, ok := s.requireAdmin(w, r, "provider", r.Method)
+	if !ok {
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"data": s.providerMonitoringSnapshots(r.Context(), "")})
+	snapshots := s.providerMonitoringSnapshots(r.Context(), "")
+	if !isPlatformAdminRole(normalizeAdminRole(user.Role)) {
+		filtered := make([]ProviderMonitoringSnapshot, 0, len(snapshots))
+		for _, snapshot := range snapshots {
+			if canManageProviderOwnedBy(user, snapshot.Provider.OwnerTeamID) {
+				filtered = append(filtered, snapshot)
+			}
+		}
+		snapshots = filtered
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"data": snapshots})
 }
 
 func (s *Server) handleAdminProviderCatalogGet(w http.ResponseWriter, r *http.Request) {
@@ -175,6 +211,12 @@ func (s *Server) handleAdminProviderCatalogItem(w http.ResponseWriter, r *http.R
 		catalogRequests := []ProviderCreateRequest{req}
 		if providerID := firstNonEmpty(strings.TrimSpace(req.ProviderID), strings.TrimSpace(req.ID)); providerID != "" {
 			if provider, ok := s.store.GetProvider(providerID); ok {
+				// The merge below reuses the stored provider's credentials, so
+				// a team leader may only merge from a provider their team owns.
+				if !canManageProviderOwnedBy(user, provider.OwnerTeamID) {
+					writeError(w, r, NewHTTPError(http.StatusForbidden, "provider_forbidden", "Provider is not owned by your team"))
+					return
+				}
 				if req.Name == "" {
 					req.Name = provider.Name
 				}
@@ -373,147 +415,6 @@ func (s *Server) importSelectedProviderCatalogModels(providerID string, catalog 
 	return imported
 }
 
-func (s *Server) providerCatalogEntryWithSelectedStandardModels(entry ProviderCatalogEntry, selectedModels []string, category string) ProviderCatalogEntry {
-	modelsByName := map[string]Model{}
-	for _, model := range s.store.ListModels() {
-		modelsByName[normalizeModelLookupName(model.Name)] = model
-	}
-	defaultCategory := providerCatalogEntrySelectedModelCategory(entry, category)
-	models := make([]ProviderCatalogModel, 0, len(selectedModels))
-	for _, modelID := range selectedModels {
-		model, ok := modelsByName[normalizeModelLookupName(modelID)]
-		if !ok {
-			continue
-		}
-		modelCategory := standardModelCategory(firstNonEmpty(defaultCategory, model.Category, inferModelCategory(model.Name, model.Name)))
-		models = append(models, ProviderCatalogModel{
-			ID:                        model.Name,
-			Name:                      model.Name,
-			DisplayName:               firstNonEmpty(model.Metadata["display_name"], model.Name),
-			CanonicalName:             model.Name,
-			Category:                  modelCategory,
-			Family:                    model.Family,
-			Type:                      model.Modality,
-			ContextWindow:             model.ContextWindow,
-			InputPriceUSDPer1M:        model.InputPriceUSDPer1M,
-			CacheReadPriceUSDPer1M:    model.CacheReadPriceUSDPer1M,
-			CacheWritePriceUSDPer1M:   model.CacheWritePriceUSDPer1M,
-			CacheWrite5mPriceUSDPer1M: model.CacheWrite5mPriceUSDPer1M,
-			CacheWrite1hPriceUSDPer1M: model.CacheWrite1hPriceUSDPer1M,
-			OutputPriceUSDPer1M:       model.OutputPriceUSDPer1M,
-			InputModalities:           append([]string(nil), model.InputModalities...),
-			OutputModalities:          append([]string(nil), model.OutputModalities...),
-			Capabilities:              append([]string(nil), model.Capabilities...),
-			SupportedParameters:       append([]string(nil), model.SupportedParameters...),
-			Metadata:                  cloneStringMap(model.Metadata),
-		})
-	}
-	catalog := entry
-	if len(models) > 0 {
-		catalog.Categories, catalog.CategoryCounts = catalogCategorySummary(models)
-	}
-	catalog.Models = models
-	catalog.ModelsCount = len(models)
-	return catalog
-}
-
-func providerCatalogEntrySelectedModelCategory(entry ProviderCatalogEntry, requestedCategory string) string {
-	if category := standardModelCategory(requestedCategory); category != "" && category != "all" {
-		return category
-	}
-	for _, category := range entry.Categories {
-		if category = standardModelCategory(category); category != "" && category != "all" {
-			return category
-		}
-	}
-	return ""
-}
-
-func (s *Server) customProviderCatalogFromStandardModels(category string) ProviderCatalogEntry {
-	models := []ProviderCatalogModel{}
-	normalizedCategory := standardModelCategory(category)
-	for _, model := range s.store.ListModels() {
-		modelCategory := standardModelCategory(firstNonEmpty(model.Category, inferModelCategory(model.Name, model.Name)))
-		if normalizedCategory != "" && normalizedCategory != "all" && modelCategory != normalizedCategory {
-			continue
-		}
-		models = append(models, ProviderCatalogModel{
-			ID:                     model.Name,
-			Name:                   model.Name,
-			DisplayName:            model.Name,
-			CanonicalName:          model.Name,
-			Category:               modelCategory,
-			Family:                 model.Family,
-			Type:                   model.Modality,
-			ContextWindow:          model.ContextWindow,
-			InputPriceUSDPer1M:     model.InputPriceUSDPer1M,
-			CacheReadPriceUSDPer1M: model.CacheReadPriceUSDPer1M,
-			OutputPriceUSDPer1M:    model.OutputPriceUSDPer1M,
-			InputModalities:        append([]string(nil), model.InputModalities...),
-			OutputModalities:       append([]string(nil), model.OutputModalities...),
-			Capabilities:           append([]string(nil), model.Capabilities...),
-			SupportedParameters:    append([]string(nil), model.SupportedParameters...),
-			Metadata:               map[string]string{"source": "tokenhub-standard-catalog"},
-		})
-	}
-	categories, categoryCounts := catalogCategorySummary(models)
-	if len(models) == 0 {
-		entry := s.providerCatalog.customProviderCatalogEntry()
-		entry.Categories = []string{firstNonEmpty(normalizedCategory, "custom")}
-		entry.CategoryCounts = map[string]int{firstNonEmpty(normalizedCategory, "custom"): 0}
-		entry.Models = nil
-		entry.ModelsCount = 0
-		return entry
-	}
-	entry := s.providerCatalog.customProviderCatalogEntry()
-	entry.Categories = categories
-	entry.CategoryCounts = categoryCounts
-	entry.Models = models
-	entry.ModelsCount = len(models)
-	return entry
-}
-
-func customProviderCatalogFromModelsWithType(input []ProviderCatalogModel, category string, providerType string) ProviderCatalogEntry {
-	normalizedCategory := strings.TrimSpace(category)
-	if normalizedCategory != "" {
-		normalizedCategory = standardModelCategory(normalizedCategory)
-	}
-	models := make([]ProviderCatalogModel, 0, len(input))
-	seen := map[string]bool{}
-	for _, model := range input {
-		model.ID = strings.TrimSpace(model.ID)
-		if model.ID == "" || seen[model.ID] {
-			continue
-		}
-		seen[model.ID] = true
-		model.Name = firstNonEmpty(strings.TrimSpace(model.Name), model.ID)
-		model.DisplayName = firstNonEmpty(strings.TrimSpace(model.DisplayName), model.Name)
-		model.CanonicalName = firstNonEmpty(strings.TrimSpace(model.CanonicalName), canonicalModelName(model.ID, model.DisplayName))
-		model.Category = standardModelCategory(firstNonEmpty(model.Category, inferModelCategory(model.ID, model.DisplayName)))
-		if normalizedCategory != "" && normalizedCategory != "all" && model.Category != normalizedCategory {
-			continue
-		}
-		model.Family = firstNonEmpty(model.Family, inferModelFamily(model.ID))
-		model.Type = firstNonEmpty(model.Type, normalizeModelModality(model.ID))
-		if model.Metadata == nil {
-			model.Metadata = map[string]string{}
-		}
-		if model.Metadata["source"] == "" {
-			model.Metadata["source"] = "custom-upstream"
-		}
-		models = append(models, model)
-	}
-	sort.SliceStable(models, func(i, j int) bool {
-		return strings.ToLower(models[i].ID) < strings.ToLower(models[j].ID)
-	})
-	entry := customProviderCatalogEntryWithType(providerType)
-	entry.Source = "custom-upstream"
-	entry.Models = models
-	entry.ModelsCount = len(models)
-	entry.Categories, entry.CategoryCounts = catalogCategorySummary(models)
-	return entry
-}
-
 func routePriorityByModel(routes []ModelRoute) map[string]int {
 	priorities := map[string]int{}
 	for _, route := range routes {
@@ -552,6 +453,9 @@ func (s *Server) handleAdminProviderItemRoute(w http.ResponseWriter, r *http.Req
 	providerID := r.PathValue("provider_id")
 	if providerID == "" {
 		writeError(w, r, NewHTTPError(http.StatusNotFound, "not_found", "Not found"))
+		return
+	}
+	if _, ok := s.requireProviderWithinActorScope(w, r, user, providerID); !ok {
 		return
 	}
 	serve(w, r, user, providerID)
@@ -604,21 +508,30 @@ func (s *Server) handleAdminProviderNested(w http.ResponseWriter, r *http.Reques
 	}
 	if len(parts) == 1 {
 		switch r.Method {
-		case http.MethodPatch:
-			s.serveAdminProviderPatch(w, r, user, parts[0])
-		case http.MethodDelete:
-			s.serveAdminProviderDelete(w, r, user, parts[0])
+		case http.MethodPatch, http.MethodDelete:
+			if _, ok := s.requireProviderWithinActorScope(w, r, user, parts[0]); !ok {
+				return
+			}
+			switch r.Method {
+			case http.MethodPatch:
+				s.serveAdminProviderPatch(w, r, user, parts[0])
+			default:
+				s.serveAdminProviderDelete(w, r, user, parts[0])
+			}
 		default:
 			jsonMethodNotAllowed(http.MethodPatch+", "+http.MethodDelete)(w, r)
 		}
 		return
 	}
 	if len(parts) != 2 || (parts[1] != "health" && parts[1] != "test" && parts[1] != "refresh-token") {
-		writeError(w, r, NewHTTPError(http.StatusNotFound, "not_found", "Not found"))
+		writeError(w, r, NewHTTPError(404, "not_found", "Not found"))
 		return
 	}
 	if r.Method != http.MethodPost {
 		jsonMethodNotAllowed(http.MethodPost)(w, r)
+		return
+	}
+	if _, ok := s.requireProviderWithinActorScope(w, r, user, parts[0]); !ok {
 		return
 	}
 	if parts[1] == "test" {
@@ -836,10 +749,16 @@ func (s *Server) handleAdminProviderResourceNested(w http.ResponseWriter, r *htt
 	}
 	if len(parts) == 1 {
 		switch r.Method {
-		case http.MethodPatch:
-			s.serveAdminProviderResourcePatch(w, r, user, parts[0])
-		case http.MethodDelete:
-			s.serveAdminProviderResourceDelete(w, r, user, parts[0])
+		case http.MethodPatch, http.MethodDelete:
+			if _, ok := s.requireProviderResourceWithinActorScope(w, r, user, parts[0]); !ok {
+				return
+			}
+			switch r.Method {
+			case http.MethodPatch:
+				s.serveAdminProviderResourcePatch(w, r, user, parts[0])
+			default:
+				s.serveAdminProviderResourceDelete(w, r, user, parts[0])
+			}
 		default:
 			jsonMethodNotAllowed(http.MethodPatch+", "+http.MethodDelete)(w, r)
 		}
@@ -848,6 +767,9 @@ func (s *Server) handleAdminProviderResourceNested(w http.ResponseWriter, r *htt
 	// splitNestedAdminPath guarantees parts[1] is a known action here.
 	if len(parts) != 2 {
 		writeError(w, r, NewHTTPError(404, "not_found", "Not found"))
+		return
+	}
+	if _, ok := s.requireProviderResourceWithinActorScope(w, r, user, parts[0]); !ok {
 		return
 	}
 	if parts[1] == "quota/reset-credits" {
@@ -899,6 +821,13 @@ func (s *Server) serveAdminProviderResourceBulk(w http.ResponseWriter, r *http.R
 		writeError(w, r, err)
 		return
 	}
+	// Bulk actions change resource state in bulk; reject the whole request when
+	// any referenced resource belongs to another team so a team leader cannot
+	// mix foreign IDs into a batch.
+	if blocked := s.providerResourceIDsOutsideActorScope(user, req.IDs); len(blocked) > 0 {
+		writeError(w, r, NewHTTPError(http.StatusForbidden, "provider_forbidden", "Provider is not owned by your team"))
+		return
+	}
 	result, err := s.store.BulkOperateProviderResources(req.Action, req.IDs)
 	if err != nil {
 		writeError(w, r, err)
@@ -914,6 +843,18 @@ func (s *Server) serveAdminProviderResourceImport(w http.ResponseWriter, r *http
 	}
 	if err := s.decodeJSON(w, r, &req); err != nil {
 		writeError(w, r, err)
+		return
+	}
+	// Imported rows attach to a provider by ID; reject the request when any row
+	// targets a provider outside the actor's scope.
+	providerIDs := make([]string, 0, len(req.Resources))
+	for _, resource := range req.Resources {
+		if providerID := strings.TrimSpace(resource.ProviderID); providerID != "" {
+			providerIDs = append(providerIDs, providerID)
+		}
+	}
+	if blocked := s.providerIDsOutsideActorScope(user, providerIDs); len(blocked) > 0 {
+		writeError(w, r, NewHTTPError(http.StatusForbidden, "provider_forbidden", "Provider is not owned by your team"))
 		return
 	}
 	result, err := s.store.ImportProviderResources(req.Resources)

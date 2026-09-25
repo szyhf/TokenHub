@@ -18,7 +18,15 @@ type providerEgressTestRequest struct {
 }
 
 func (s *Server) handleAdminProviderEgressTestPost(w http.ResponseWriter, r *http.Request) {
-	if _, ok := s.requireAdmin(w, r, "provider", r.Method); !ok {
+	user, ok := s.requireAdmin(w, r, "provider", r.Method)
+	if !ok {
+		return
+	}
+	// The egress probe validates global upstream proxy settings against a
+	// stored provider, so it stays a platform-administrator diagnostic even
+	// though team leaders can now manage their own providers.
+	if !isPlatformAdminRole(normalizeAdminRole(user.Role)) {
+		writeError(w, r, NewHTTPError(http.StatusForbidden, "admin_forbidden", "Admin role is not allowed to perform this action"))
 		return
 	}
 	var req providerEgressTestRequest

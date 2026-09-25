@@ -13,10 +13,11 @@ import (
 type adminProviderResourceItemHandler func(http.ResponseWriter, *http.Request, AdminUser, string)
 
 func (s *Server) handleAdminProviderResourcesGet(w http.ResponseWriter, r *http.Request) {
-	if _, ok := s.requireAdmin(w, r, "provider", r.Method); !ok {
+	user, ok := s.requireAdmin(w, r, "provider", r.Method)
+	if !ok {
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"data": s.store.ListProviderResources()})
+	writeJSON(w, http.StatusOK, map[string]any{"data": s.filterProviderResourcesForActor(user, s.store.ListProviderResources())})
 }
 
 func (s *Server) handleAdminProviderResourcesPost(w http.ResponseWriter, r *http.Request) {
@@ -36,6 +37,10 @@ func (s *Server) handleAdminProviderResourcesPost(w http.ResponseWriter, r *http
 	provider, found := s.store.GetProvider(req.ProviderID)
 	if !found {
 		writeError(w, r, NewHTTPError(http.StatusNotFound, "provider_not_found", "Provider not found"))
+		return
+	}
+	if !canManageProviderOwnedBy(user, provider.OwnerTeamID) {
+		writeError(w, r, NewHTTPError(http.StatusForbidden, "provider_forbidden", "Provider is not owned by your team"))
 		return
 	}
 	if err := s.validateProviderHeaderSupport(provider.Type, req.Headers); err != nil {
@@ -77,6 +82,9 @@ func (s *Server) handleAdminProviderResourceItemRoute(w http.ResponseWriter, r *
 		writeError(w, r, NewHTTPError(http.StatusNotFound, "not_found", "Not found"))
 		return
 	}
+	if _, ok := s.requireProviderResourceWithinActorScope(w, r, user, resourceID); !ok {
+		return
+	}
 	serve(w, r, user, resourceID)
 }
 
@@ -98,6 +106,9 @@ func (s *Server) handleAdminProviderResourceActionRoute(w http.ResponseWriter, r
 	resourceID := r.PathValue("resource_id")
 	if resourceID == "" {
 		writeError(w, r, NewHTTPError(http.StatusNotFound, "not_found", "Not found"))
+		return
+	}
+	if _, ok := s.requireProviderResourceWithinActorScope(w, r, user, resourceID); !ok {
 		return
 	}
 	serve(w, r, user, resourceID)

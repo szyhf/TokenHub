@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "baselines": {
-    "postgres": "480bd423b47864df5a076c55f2f03362e17aa2f55d282cfff58924d994291294",
-    "sqlite": "36ecbd5b00d8f964bf34d3f3b7d3b6e7532cc7ad98011efd4749c60bccad6127"
+    "postgres": "d7f9ebb8348c0585bda6a94af29c32cf4641d2e0660dfb248efcac9b4d8f19ea",
+    "sqlite": "86ce07cf6cc51a5f0bb3b3be9c407e52642a78008061a3280f9498bd31eceae7"
   },
   "migrations": [
     {
@@ -47,6 +47,15 @@
       "phase": "expand",
       "dialect": "",
       "checksum": "d4fffe9ce0a02dcf7bf27d5d44541f121f8ffd76384b8e1168365d8c26199a80",
+      "lock_timeout_seconds": 30,
+      "statement_budget": 10
+    },
+    {
+      "version": 7,
+      "name": "add-provider-owner-team",
+      "phase": "expand",
+      "dialect": "",
+      "checksum": "tokenhub-schema-provider-owner-team-v1",
       "lock_timeout_seconds": 30,
       "statement_budget": 10
     }

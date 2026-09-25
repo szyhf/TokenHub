@@ -312,6 +312,10 @@ type ProviderCreateRequest struct {
 	ProviderAuthMode string                 `json:"provider_auth_mode"`
 	// AnthropicAuthType is a legacy write-only alias for provider auth mode.
 	AnthropicAuthType string `json:"anthropic_auth_type"`
+	// OwnerTeamID optionally assigns the provider to a team. Only platform
+	// administrators may set it; requests from team leaders are forced to the
+	// actor's own team regardless of this field.
+	OwnerTeamID string `json:"owner_team_id,omitempty"`
 }
 
 type ProviderCreateResult struct {
@@ -334,7 +338,12 @@ type Provider struct {
 	SensitiveHeaders       []string          `json:"sensitive_headers,omitempty" gorm:"serializer:json"`
 	HeaderValidationErrors []string          `json:"header_validation_errors,omitempty" gorm:"-"`
 	Options                map[string]string `json:"options,omitempty" gorm:"serializer:json"`
-	CreatedAt              time.Time         `json:"created_at"`
+	// OwnerTeamID scopes a provider to a team. An empty value means the
+	// provider belongs to the platform and only platform administrators can
+	// manage it. Team leaders can only see and manage providers owned by
+	// their own team.
+	OwnerTeamID string    `json:"owner_team_id,omitempty" gorm:"index"`
+	CreatedAt   time.Time `json:"created_at"`
 }
 
 type ProviderResource struct {

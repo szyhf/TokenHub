@@ -63,9 +63,13 @@ func canAdmin(role string, resource string, method string) bool {
 			return false
 		}
 		if write {
-			return resource == "identity" || resource == "project" || resource == "api_key" || resource == "approval" || resource == "playground" || resource == "quota"
+			return resource == "identity" || resource == "project" || resource == "api_key" || resource == "approval" || resource == "playground" || resource == "quota" ||
+				// Team leaders manage provider channels owned by their own
+				// team; object-level ownership is enforced by the provider
+				// tenancy checks in the handlers.
+				resource == "provider"
 		}
-		return resource == "overview" || resource == "project" || resource == "api_key" || resource == "usage" || resource == "audit" || resource == "identity" || resource == "approval" || resource == "quota"
+		return resource == "overview" || resource == "project" || resource == "api_key" || resource == "usage" || resource == "audit" || resource == "identity" || resource == "approval" || resource == "quota" || resource == "provider"
 	case "user":
 		if write {
 			return resource == "api_key" || resource == "playground"
