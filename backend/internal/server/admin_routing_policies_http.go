@@ -7,7 +7,8 @@ import (
 )
 
 func (s *Server) handleAdminRoutingPolicySimulation(w http.ResponseWriter, r *http.Request) {
-	if _, ok := s.requireAdmin(w, r, "routing", r.Method); !ok {
+	user, ok := s.requireAdmin(w, r, "routing", r.Method)
+	if !ok {
 		return
 	}
 	var req struct {
@@ -22,6 +23,12 @@ func (s *Server) handleAdminRoutingPolicySimulation(w http.ResponseWriter, r *ht
 	project, ok := s.store.GetProject(strings.TrimSpace(req.ProjectID))
 	if !ok {
 		writeError(w, r, NewHTTPError(http.StatusNotFound, "project_not_found", "Project not found"))
+		return
+	}
+	// Simulation resolves candidates through a real project credential, so team
+	// leaders may only simulate projects of their own team.
+	if !isPlatformAdminRole(normalizeAdminRole(user.Role)) && strings.TrimSpace(project.TeamID) != strings.TrimSpace(user.TeamID) {
+		writeError(w, r, NewHTTPError(http.StatusForbidden, "routing_forbidden", "Routing simulation is only available for your team's projects"))
 		return
 	}
 	var key APIKey
@@ -137,6 +144,11 @@ func (s *Server) handleAdminRoutingPolicyActionRoute(w http.ResponseWriter, r *h
 }
 
 func (s *Server) serveAdminRoutingPolicyAction(w http.ResponseWriter, r *http.Request, user AdminUser, policyID string, action string) {
+	// Routing policy binding decides which projects a global policy applies
+	// to, which is a platform routing decision.
+	if !requireRoutingPlatformAdmin(w, r, user) {
+		return
+	}
 	policy, err := s.findResource(routingPolicyResourceKind, policyID)
 	if err != nil {
 		writeError(w, r, err)

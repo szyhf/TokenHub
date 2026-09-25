@@ -6,6 +6,11 @@ import (
 )
 
 func (s *Server) serveAdminModelRoutingPolicyPatch(w http.ResponseWriter, r *http.Request, user AdminUser, modelName string) {
+	// The model routing policy rewrites strategy for every route of a model,
+	// including platform and other teams' routes, so it stays administrator-only.
+	if !requireRoutingPlatformAdmin(w, r, user) {
+		return
+	}
 	var policy ModelRoutePolicy
 	if err := s.decodeJSON(w, r, &policy); err != nil {
 		writeError(w, r, err)

@@ -50,6 +50,14 @@ Team leaders can register their own upstream LLM configuration as a team-owned P
 
 Upstream access policy applies to your channels exactly as it does to platform channels: private or loopback addresses are rejected unless the administrator allows them, and provider creation reusing an existing Provider ID is refused. Deleting a channel removes its routes, imported models, resources, and observations together, so clear dependent routes first if you plan to re-create them.
 
+## Route Models to Your Own Channel
+
+Team leaders manage the model routes whose provider belongs to their own team. In **Routing Policies**, create a mapping from an external model to your channel's imported upstream model, and tune priority, weight, and project scope for it.
+
+- Your students' requests resolve routes through the projects you own: a project whose primary team is your team can use your channel's routes plus platform routes; other teams' projects never reach your channel.
+- One external model can carry both a platform route and your route; the planner picks your channel for your team's projects and the platform channel for everyone else, by priority and weight.
+- Route creation and editing only accept providers owned by your team, and the route list shows only those routes. Global routing surfaces — model-level routing strategy, routing policy objects, and policy binding — remain administrator-managed.
+
 ## Roll Out a Project Key
 
 1. Create or select a project in **Project Spaces**.

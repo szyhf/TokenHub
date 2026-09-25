@@ -1052,10 +1052,6 @@ func adminModelRoutingPolicyNameFromPath(r *http.Request) (string, bool) {
 	return modelName, modelName != ""
 }
 
-func (s *Server) serveAdminRoutesGet(w http.ResponseWriter) {
-	writeJSON(w, http.StatusOK, map[string]any{"data": s.store.ListRoutes()})
-}
-
 func (s *Server) serveAdminRoutesPost(w http.ResponseWriter, r *http.Request, user AdminUser) {
 	var req ModelRoute
 	if err := s.decodeJSON(w, r, &req); err != nil {
@@ -1070,6 +1066,10 @@ func (s *Server) serveAdminRoutesPost(w http.ResponseWriter, r *http.Request, us
 		req.Priority = takeNextRoutePriority(routePriorityByModel(s.store.ListRoutes()), req.ModelName)
 	}
 	if err := s.validateRouteAdapter(req); err != nil {
+		writeError(w, r, err)
+		return
+	}
+	if err := s.validateRouteProviderWithinActorScope(user, req.ProviderID); err != nil {
 		writeError(w, r, err)
 		return
 	}
@@ -1182,6 +1182,10 @@ func (s *Server) serveAdminRoutePatch(w http.ResponseWriter, r *http.Request, us
 	}
 	candidate := mergedModelRoute(current, req)
 	if err := s.validateRouteAdapter(candidate); err != nil {
+		writeError(w, r, err)
+		return
+	}
+	if err := s.validateRouteProviderWithinActorScope(user, candidate.ProviderID); err != nil {
 		writeError(w, r, err)
 		return
 	}

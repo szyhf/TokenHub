@@ -260,6 +260,9 @@ func (s *Server) handleAdminResourceCollectionRoute(w http.ResponseWriter, r *ht
 	if !ok {
 		return
 	}
+	if kind == routingPolicyResourceKind && !requireRoutingPlatformAdmin(w, r, user) {
+		return
+	}
 	handler(w, r, user, kind)
 }
 
@@ -280,6 +283,9 @@ func (s *Server) handleAdminResourceItemRoute(w http.ResponseWriter, r *http.Req
 	}
 	user, ok := s.requireAdmin(w, r, adminResourcePermission(r.URL.Path), r.Method)
 	if !ok {
+		return
+	}
+	if kind == routingPolicyResourceKind && !requireRoutingPlatformAdmin(w, r, user) {
 		return
 	}
 	handler(w, r, user, kind, resourceID)

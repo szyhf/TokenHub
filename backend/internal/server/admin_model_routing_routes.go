@@ -51,10 +51,11 @@ func (s *Server) handleAdminModelRoutingPolicyPatch(w http.ResponseWriter, r *ht
 type adminRoutingRuleItemHandler func(http.ResponseWriter, *http.Request, AdminUser, string)
 
 func (s *Server) handleAdminRoutesGet(w http.ResponseWriter, r *http.Request) {
-	if _, ok := s.requireAdmin(w, r, "routing", r.Method); !ok {
+	user, ok := s.requireAdmin(w, r, "routing", r.Method)
+	if !ok {
 		return
 	}
-	s.serveAdminRoutesGet(w)
+	writeJSON(w, http.StatusOK, map[string]any{"data": s.filterRoutesForActor(user, s.store.ListRoutes())})
 }
 
 func (s *Server) handleAdminRoutesPost(w http.ResponseWriter, r *http.Request) {
@@ -74,6 +75,14 @@ func (s *Server) handleAdminRoutingRuleRoute(w http.ResponseWriter, r *http.Requ
 	if routeID == "" {
 		writeError(w, r, NewHTTPError(http.StatusNotFound, "not_found", "Not found"))
 		return
+	}
+	// Explain (GET) accepts a placeholder route ID and only needs the model
+	// query, so existence-based ownership applies to mutations only; the
+	// explain output itself already runs through the team-scoped planner.
+	if r.Method != http.MethodGet {
+		if _, ok := s.requireRouteWithinActorScope(w, r, user, routeID); !ok {
+			return
+		}
 	}
 	serve(w, r, user, routeID)
 }

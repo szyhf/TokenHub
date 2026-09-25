@@ -200,6 +200,7 @@ Provider Channels are either platform-owned or team-owned. A team-owned Provider
 | ID reuse | Team leaders cannot create a Provider with an ID that already exists, because Provider creation upserts by primary key. |
 | Egress control | Team-owned Providers pass through the same upstream access policy as platform channels: strict mode, the private CIDR allowlist, and the loopback opt-in. Team leaders cannot bypass it, and the egress probe endpoint stays administrator-only. |
 | Deletion | Deleting a Provider removes its routes, imported inventory, resources, and observations in one transaction, for administrators and owning team leaders alike. |
+| Routing | Routes inherit the provider's owner: team leaders may create, edit, and delete only routes that reference their own team's providers. The gateway serves a team-owned provider exclusively to projects whose primary team matches, so one external model can map to platform and several teams' channels at once. Model-level routing strategy, routing policy objects, and policy binding stay administrator-only, and routing simulation accepts only the leader's own team's projects. |
 
 This is the foundation for delegated classrooms: a teacher brings their own upstream API configuration, manages accounts under it, and the routing layer can then scope model routes to that team.
 

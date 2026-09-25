@@ -947,7 +947,7 @@ func (s *Server) planRouteOrderWithContext(ctx context.Context, call CallContext
 	}
 	ordered := make([]RouteSelection, 0, len(routes))
 	for _, route := range routes {
-		if routeMatchesProject(route.Route, call.Project.ID) {
+		if routeMatchesProject(route.Route, call.Project.ID) && routeProviderAllowedForProject(route.Provider, call.Project) {
 			ordered = append(ordered, route)
 		}
 	}

@@ -148,7 +148,7 @@ The following are the operational built-in Provider registrations. Effective cap
 | `openai_codex` | Responses, streaming Responses, models, probes, quota, OAuth, session affinity, Compact, and image generation |
 | `mock` | Local verification and tests |
 
-The Provider inventory supports team ownership: a Provider row may carry an `owner_team_id`, in which case only platform administrators and the owning team's leaders can manage that channel and its resources. Provider management handlers enforce this at every write path, while routing stays platform-global until routes gain their own team scoping.
+The Provider inventory supports team ownership: a Provider row may carry an `owner_team_id`, in which case only platform administrators and the owning team's leaders can manage that channel and its resources. Provider management handlers enforce this at every write path. Routing inherits the same tenancy: a route may only reference a provider its creator may manage, and the candidate filter in the route planner serves a team-owned provider exclusively to projects whose primary team matches, so one external model name can safely map to both a platform channel and several teams' channels.
 
 ## Model Request Flow
 
