@@ -21,6 +21,7 @@ export function providerConfig(): ResourceConfig<Provider> {
     createLabel: "新增 Provider",
     columns: [
       { key: "name", label: "名称", render: (item, ctx) => providerDisplayName(item, ctx.providerResources) },
+      { key: "owner_team_id", label: "归属", render: (item, ctx) => providerOwnerLabel(item, ctx) },
       { key: "type", label: "类型", render: (item, ctx) => providerTypeLabelFromData(ctx, providerDisplayType(item, ctx.providerResources)) },
       { key: "base_url", label: "Base URL", render: (item, ctx) => providerDisplayBaseURL(item, ctx.providerResources) },
       { key: "models", label: "已引入模型", render: (item, ctx) => ctx.providerModels.filter((model) => model.provider_id === item.id).length },
@@ -619,4 +620,13 @@ export function routeConfig(): ResourceConfig<ModelRoute> {
     remove: (ctx, item) => adminDelete(ctx, `/api/admin/routing-rules/${item.id}`),
     toForm: (item) => stringifyForm(item),
   };
+}
+
+
+export function providerOwnerLabel(item: Provider, ctx: AppData): string {
+  if (!item.owner_team_id) {
+    return tx("平台渠道");
+  }
+  const team = (ctx.resources["teams"] ?? []).find((candidate) => candidate.id === item.owner_team_id);
+  return team?.name ? `${tx("团队渠道")} · ${team.name}` : tx("团队渠道");
 }

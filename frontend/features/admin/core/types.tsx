@@ -109,6 +109,7 @@ export type Provider = {
   sensitive_headers?: string[];
   header_validation_errors?: string[];
   options?: Record<string, string>;
+  owner_team_id?: string;
 };
 
 export type BillingConnector = {

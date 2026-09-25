@@ -36,6 +36,7 @@ These tests establish UI behavior only. A sample response containing an amount d
 - `fixtures/billing.ts` uses the existing statement DTOs. Keep IDs, amounts, dates and identities synthetic. Clone data per test and use small, named examples.
 - `scenarios/billing.ts` lists the parameterized statement states. `billing.spec.ts` and `pricing.spec.ts` drive actual controls and assert visible outcomes and relevant outgoing requests.
 - `harness.ts` installs isolation, fixes time/language and provides the shared capture helper. `isolation.spec.ts` verifies the guard itself rejects missing routes, wrong methods, bad payloads and network fallbacks.
+- `teacherTest` in `harness.ts` seeds a team-leader session for role-restricted scenarios; `teacher-console.spec.ts` uses it to assert the teacher provider workspace shows team ownership and never requests admin-only plugin endpoints.
 
 For an affected page, cover its normal path and relevant empty, loading, failure, permission or long-content states. Prefer role/label selectors; scope repeated controls to their section. Assert the state before capturing it. Control loading with a releasable response instead of a timing sleep. Never recreate the production billing algorithm inside a fixture.
 

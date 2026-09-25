@@ -559,3 +559,19 @@
   outline-offset: 2px;
   border-radius: 2px;
 }
+
+.provider-owner-badge {
+  font-style: normal;
+  font-size: 11px;
+  line-height: 1;
+  padding: 3px 8px;
+  margin-left: 8px;
+  border-radius: 999px;
+  vertical-align: 1px;
+  background: rgba(37, 99, 235, 0.12);
+  color: #2563eb;
+}
+
+.provider-owner-badge + span {
+  display: block;
+}

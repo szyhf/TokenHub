@@ -11,7 +11,7 @@ import { isProviderAccountResource } from "../domain/provider-resource-types";
 import { enumValueLabel, providerTypeLabelFromData, reportDatasetLabel, roleLabel } from "../domain/labels";
 import { countWithUnit, languageLocale, tx } from "../i18n/runtime";
 import { reportExportDefinitions } from "../resources/governance-config";
-import { providerPluginActionForResourceCapability, runProviderResourcePluginAction } from "../resources/provider-model-config";
+import { providerOwnerLabel, providerPluginActionForResourceCapability, runProviderResourcePluginAction } from "../resources/provider-model-config";
 import { DataSection, SimpleTable, StatusPill } from "../shared/ui";
 import { APIKeyEmptyState } from "./api-key-empty-state";
 import { ModelCategoryTabs, NotificationChannelTabs } from "./model-catalog";
@@ -365,6 +365,7 @@ export function ProviderChannelTable({
                     <span className={`provider-monitor-avatar ${row.statusTone}`}>{providerDisplayName(row.provider, row.resources).slice(0, 1).toUpperCase()}</span>
                     <div>
                       <strong>{providerDisplayName(row.provider, row.resources)}</strong>
+                      {row.provider.owner_team_id ? <em className="provider-owner-badge">{providerOwnerLabel(row.provider, data)}</em> : null}
                       <span title={providerDisplayBaseURL(row.provider, row.resources)}>
                         {providerTypeLabelFromData(data, providerDisplayType(row.provider, row.resources))} · {providerDisplayBaseURL(row.provider, row.resources)}
                       </span>

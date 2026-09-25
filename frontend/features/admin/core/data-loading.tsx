@@ -151,19 +151,22 @@ export function loadPlanForView(user: AdminUser, view: ViewKey): LoadPlan {
       break;
     case "providers":
       plan.providers = true;
-      plan.plugins = true;
-      plan.pluginMarketplace = true;
-      plan.pluginUI = true;
-      plan.pluginActions = true;
-      plan.pluginBackgroundJobs = true;
       plan.providerResources = true;
       plan.overview = true;
+      addResourceDependency(plan, "teams");
+      if (appRole(user.role) === "admin") {
+        plan.plugins = true;
+        plan.pluginMarketplace = true;
+        plan.pluginUI = true;
+        plan.pluginActions = true;
+        plan.pluginBackgroundJobs = true;
+        plan.providerAdapters = true;
+      }
       plan.routes = true;
       plan.logs = can("audit");
       plan.auditEvents = canViewAdminAudit(user);
       plan.breakdown = can("usage") || can("billing");
       plan.providerCatalog = true;
-      plan.providerAdapters = true;
       plan.providerModels = true;
       plan.providerMonitoring = true;
       break;
@@ -189,9 +192,11 @@ export function loadPlanForView(user: AdminUser, view: ViewKey): LoadPlan {
       plan.overview = true;
       plan.routes = true;
       plan.providerModels = true;
-      plan.pluginUI = true;
-      plan.pluginActions = true;
-      plan.pluginBackgroundJobs = true;
+      if (appRole(user.role) === "admin") {
+        plan.pluginUI = true;
+        plan.pluginActions = true;
+        plan.pluginBackgroundJobs = true;
+      }
       break;
     case "routing-policies":
       plan.overview = true;

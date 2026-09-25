@@ -32,6 +32,36 @@ export const test = base.extend<{ api: MockAPI }>({
     }
   }, { auto: true }],
 });
+// teacherTest seeds a team-leader session so scenarios can exercise the
+// teacher workspace without touching the shared admin fixture.
+export const teacherTest = base.extend<{ api: MockAPI }>({
+  api: [async ({ context, page }, runScenario) => {
+    const api = new MockAPI();
+    for (const [key, json] of shellResponses()) {
+      const [method, pathname] = key.split(" ");
+      api.respond(method, pathname, json);
+    }
+    await api.install(context);
+    await page.clock.setFixedTime(new Date(fixedTime));
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    const teacher = { ...user, id: "usr_ui_teacher", username: "ui-teacher", name: "UI Review Teacher", email: "ui-teacher@example.test", role: "team_leader", team_id: "team_ui" };
+    await context.addInitScript(({ sessionKey, languageKey, session }) => {
+      window.sessionStorage.setItem(sessionKey, JSON.stringify(session));
+      window.localStorage.setItem(languageKey, "zh-CN");
+    }, { sessionKey: sessionStorageKey, languageKey: languageStorageKey, session: { baseURL: apiOrigin, token: "ui-fixture-session", user: teacher, expiresAt: "2099-01-01T00:00:00Z" } });
+    const pageErrors: string[] = [];
+    context.on("page", opened => opened.on("pageerror", error => pageErrors.push(error.message)));
+    page.on("pageerror", error => pageErrors.push(error.message));
+    try {
+      await runScenario(api);
+    } finally {
+      await context.close();
+      api.assertClean();
+      expect(pageErrors, "Unexpected application errors").toEqual([]);
+    }
+  }, { auto: true }],
+});
+
 export { expect };
 
 export function section(page: Page, title: string): Locator {

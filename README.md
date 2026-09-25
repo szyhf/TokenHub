@@ -73,6 +73,7 @@ TokenHub separates everyday model usage, team governance, and platform administr
 ## Platform Capabilities
 
 - Project-scoped key management with team ownership, member permissions, quotas, and concurrency controls.
+- Team-owned provider channels: team leaders register their own upstream credentials and model routes, and the gateway serves them only to that team's projects.
 - Model catalog and routing policies with priority, weight, failover order, scenario-aware selection, and route health diagnostics.
 - Usage analytics and request logs attributed to user, project, team, model, and cost center.
 - Cost controls for token budgets, provider spend comparison, model choice, and future caching-driven savings.

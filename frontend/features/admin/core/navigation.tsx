@@ -52,6 +52,13 @@ export const teamLeaderNavGroups: NavGroup[] = [
     ],
   },
   {
+    title: "自有渠道",
+    items: [
+      { view: "providers", label: "Provider 渠道", icon: Server },
+      { view: "routes", label: "路由策略", icon: Gauge },
+    ],
+  },
+  {
     title: "团队管理",
     items: [
       { view: "users", label: "团队成员", icon: Users },
@@ -220,7 +227,7 @@ export const roleViewAccess: Record<AppRole, ViewKey[]> = {
     (view) => view !== "project-members" && view !== "approval-flows",
   ),
   security: ["overview", "gateway", "usage", "audit", "alerts", "alert-events", "notification-channels", "alert-deliveries", "security-policies", "approvals"],
-  team_leader: ["overview", "gateway", "playground", "models", "projects", "api-keys", "teams", "users", "usage", "billing", "quota-policies", "audit", "approvals"],
+  team_leader: ["overview", "gateway", "playground", "models", "projects", "api-keys", "teams", "users", "usage", "billing", "quota-policies", "audit", "approvals", "providers", "routes"],
   user: ["overview", "gateway", "playground", "models", "api-keys", "usage", "audit"],
 };
 
