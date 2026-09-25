@@ -6,9 +6,9 @@ teacherTest("teacher-console provider ownership scope", async ({ page, api }, te
     { id: "prv_ui_teacher", name: "UI Teacher Channel", type: "mock", base_url: "https://teacher-upstream.example.test/v1", priority: 1, status: "active", healthy: true, owner_team_id: "team_ui" },
   ];
   api.respond("GET", "/api/admin/providers", { data: providers });
+  api.replaceResponse("GET", "/api/admin/resources/teams", { data: [{ id: "team_ui", kind: "teams", name: "UI Teacher Team", status: "active" }] });
   api.respond("GET", "/api/admin/provider-catalog", { data: [{ id: "local", name: "Mock Catalog", display_name: "Mock Provider", type: "mock", models_count: 0, source: "plugin" }] });
   api.respond("GET", "/api/admin/provider-catalog/local", { data: { id: "local", name: "Local Cluster", type: "mock", models_count: 0, models: [], source: "plugin" } });
-  api.respond("GET", "/api/admin/resources/teams", { data: [{ id: "team_ui", kind: "teams", name: "UI Teacher Team", status: "active" } satisfies AdminResource] });
   for (const path of ["provider-resources", "routing-rules", "audit/events", "providers/monitoring"]) {
     api.respond("GET", `/api/admin/${path}`, { data: [] });
   }

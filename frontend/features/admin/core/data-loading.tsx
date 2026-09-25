@@ -142,6 +142,7 @@ export function loadPlanForView(user: AdminUser, view: ViewKey): LoadPlan {
 			plan.billingSyncRuns = true;
 			plan.reconciliationRules = true;
 			plan.reconciliationRuns = true;
+			addResourceDependency(plan, "teams");
 		}
       break;
     case "audit":

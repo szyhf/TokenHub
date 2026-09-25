@@ -13,7 +13,6 @@ function setup(api: MockAPI, options: { failRotation?: boolean; loading?: Promis
   const keys: APIKey[] = [structuredClone(original)];
   api.define("GET", "/api/admin/api-keys", () => ({ json: { data: structuredClone(keys) } }));
   api.respond("GET", "/api/admin/users", { data: [user] });
-  api.respond("GET", "/api/admin/resources/teams", { data: [] });
   api.respond("GET", "/api/admin/resources/project-members", { data: [] });
   api.define("POST", `/api/admin/projects/${project.id}/keys`, input => {
     expect(input.body).toEqual({ name: "UI Created Key", group: "default", owner_user_id: user.id, model_access_mode: "inherit", allowed_models: [], ip_allowlist: [], limits: { daily_requests: 1000, monthly_requests: 30000, daily_tokens: 100000000, monthly_tokens: 2000000000, daily_cost_usd: 100, monthly_cost_usd: 2000, max_concurrency: 20 } });

@@ -38,19 +38,24 @@ type meteringPriceSnapshot struct {
 }
 
 func (card meteringRateCard) validate() error {
-	if card.Kind != "tenant" && card.Kind != "provider" {
-		return fmt.Errorf("kind must be tenant or provider")
+	if card.Kind != "tenant" && card.Kind != "tenant_team" && card.Kind != "provider" {
+		return fmt.Errorf("kind must be tenant, tenant_team, or provider")
 	}
 	if strings.TrimSpace(card.Target) == "" || strings.TrimSpace(card.Source) == "" {
 		return fmt.Errorf("target and source are required")
 	}
-	if card.Kind == "tenant" && card.Currency != "USD" {
+	if card.Kind != "provider" && card.Currency != "USD" {
 		return fmt.Errorf("tenant prices must use USD")
+	}
+	if card.Kind == "tenant_team" {
+		if teamID, model, ok := splitTenantTeamRateTarget(card.Target); !ok || teamID == "" || model == "" {
+			return fmt.Errorf("tenant_team target must be team_id:model_name")
+		}
 	}
 	if _, err := metering.Price(card.Rates, metering.Units{}, card.Currency, ""); err != nil {
 		return err
 	}
-	if err := card.Rates.Validate(card.Kind == "tenant"); err != nil {
+	if err := card.Rates.Validate(card.Kind != "provider"); err != nil {
 		return err
 	}
 	periods := make([]ModelPricingPeriod, len(card.Periods))

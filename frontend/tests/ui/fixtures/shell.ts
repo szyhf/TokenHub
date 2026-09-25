@@ -12,6 +12,7 @@ export function shellResponses(): Map<string, unknown> {
   return new Map<string, unknown>([
     ["GET /api/admin/overview", { summary, projects: [project], models: [model], providers: [], provider_resources: [], alerts: [] }],
     ["GET /api/admin/projects", { data: [project] }],
+    ["GET /api/admin/resources/teams", { data: [] }],
     ["GET /api/admin/provider-models", { data: [] }],
     ["GET /api/admin/usage/breakdown", breakdown],
     ["GET /api/admin/billing/connectors", { data: [] }],

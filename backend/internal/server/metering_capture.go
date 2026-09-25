@@ -84,7 +84,7 @@ func (s *GormStore) captureMeteringRequest(tx *gorm.DB, call CallContext) error 
 		return nil
 	}
 	price := legacyMeteringPrice(call.Model, call.StartedAt, false)
-	card, err := loadMeteringCard(tx, "tenant", call.Model.Name, call.StartedAt)
+	card, err := resolveTenantMeteringCard(tx, call.Project.TeamID, call.Model.Name, call.StartedAt)
 	if err != nil {
 		return err
 	}

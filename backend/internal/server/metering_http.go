@@ -112,6 +112,12 @@ func (s *GormStore) PublishMeteringCard(card meteringRateCard) (meteringRateCard
 		return card, NewHTTPError(400, "retroactive_rate_card", "Cannot publish retroactive prices")
 	}
 	err := s.db.Transaction(func(tx *gorm.DB) error {
+		if card.Kind == tenantTeamRateCardKind {
+			teamID, _, ok := splitTenantTeamRateTarget(card.Target)
+			if !ok || !tenantTeamRateCardTeamExists(tx, teamID) {
+				return NewHTTPError(400, "rate_card_team_not_found", "tenant_team target must reference an existing team")
+			}
+		}
 		if err := s.lockScopeForUpdate(tx, "metering_rate", card.Kind+":"+card.Target); err != nil {
 			return err
 		}

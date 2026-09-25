@@ -27,7 +27,7 @@
 | POST | `/api/admin/billing/exchange-rates` | 发布 `{currency, rate, source, effective_from?}`，方向为 1 原币兑 `rate` USD |
 | GET | `/api/admin/billing/evidence/{request_id}` | 查询准入、尝试准备及影子结算证据 |
 
-价目包含 `kind`（tenant/provider）、`target`（模型名或 `provider_id:upstream_model`）、`currency`、`source`、可选 `effective_from`、`rates` 和可选 `periods`。分项键为 `input`、`cache_read`、`cache_write`、`cache_write_5m`、`cache_write_1h`、`output`；时段将上述时间规则与 `rates` 覆盖组合。选择最新适用生效时刻，同一数据库时刻立即发布的版本按 revision 排序。历史快照保持原版本，汇率在每次尝试固定。价格和汇率发布均记录管理员审计事件。
+价目包含 `kind`（tenant/tenant_team/provider）、`target`（模型名、`team_id:模型名` 或 `provider_id:upstream_model`）。`tenant_team` 价卡按"团队×模型"覆盖全局租户价：解析时优先团队价、无则回退全局 tenant 价；发布时会校验目标团队存在，避免拼写错误静默回退、`currency`、`source`、可选 `effective_from`、`rates` 和可选 `periods`。分项键为 `input`、`cache_read`、`cache_write`、`cache_write_5m`、`cache_write_1h`、`output`；时段将上述时间规则与 `rates` 覆盖组合。选择最新适用生效时刻，同一数据库时刻立即发布的版本按 revision 排序。历史快照保持原版本，汇率在每次尝试固定。价格和汇率发布均记录管理员审计事件。
 
 新证据保存项目/Key 的 ID 和名称、用户/团队/成本中心 ID、准入 UTC 日/月，以及逐次 Provider/资源归属、价格、汇率、上游请求 ID 和结果，不保存 prompt、响应正文或凭据。只有准备记录而无完成证据时表示“可能已发送”，不能自动重发或按免费处理。影子结算与现有请求结算同事务提交，每个服务端请求 ID 只有一份基础记录。
 

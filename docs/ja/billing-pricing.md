@@ -27,7 +27,7 @@
 | POST | `/api/admin/billing/exchange-rates` | `{currency, rate, source, effective_from?}` を公開。元通貨 1 単位 = `rate` USD |
 | GET | `/api/admin/billing/evidence/{request_id}` | 受付・試行準備・シャドー精算の証拠 |
 
-料金には `kind`（tenant/provider）、`target`（モデル名または `provider_id:upstream_model`）、`currency`、`source`、任意の `effective_from`、`rates`、任意の `periods` を含めます。分項キーは `input`、`cache_read`、`cache_write`、`cache_write_5m`、`cache_write_1h`、`output` です。時間帯は時間ルールと `rates` 上書きから構成します。適用可能な最新の有効時刻を選び、同じ DB 時刻に即時公開された版は revision で順序付けます。過去のスナップショットは元の版を保持し、為替は試行ごとに固定します。料金・為替の公開は管理者監査に記録します。
+料金には `kind`（tenant/tenant_team/provider）、`target`（モデル名、`team_id:モデル名`、または `provider_id:upstream_model`）。`tenant_team` のカードはチーム別のモデル単価で、解決時はチームのカードを優先し、なければ全体の tenant カードへフォールバックします。公開時に対象チームの存在を検証し、タイプミスによる暗黙のフォールバックを防ぎます、`currency`、`source`、任意の `effective_from`、`rates`、任意の `periods` を含めます。分項キーは `input`、`cache_read`、`cache_write`、`cache_write_5m`、`cache_write_1h`、`output` です。時間帯は時間ルールと `rates` 上書きから構成します。適用可能な最新の有効時刻を選び、同じ DB 時刻に即時公開された版は revision で順序付けます。過去のスナップショットは元の版を保持し、為替は試行ごとに固定します。料金・為替の公開は管理者監査に記録します。
 
 証拠にはプロジェクト/Key の ID と名称、ユーザー/チーム/コストセンター ID、受付 UTC 日/月、試行ごとの Provider/リソース、価格、為替、上流リクエスト ID と結果を保存し、prompt、応答本文、認証情報は保存しません。準備のみで完了証拠がない試行は「送信された可能性あり」であり、自動再送や無料扱いは禁止です。シャドー精算は既存精算と同一トランザクションで、サーバーリクエスト ID ごとに基本記録を 1 件だけ作成します。
 

@@ -61,9 +61,9 @@ export function BillingRateCards({ api, data }: { api: ApiContext; data: AppData
     <p>{tx("影子价目用于核对，不改变当前收费与预算。单价单位为原币/百万 Token；填写 0 表示免费，时段留空表示继承。")}</p>
     <form onSubmit={(event) => { event.preventDefault(); void act("preview"); }} onChange={() => setPreview(null)}>
       <div className="form-grid">
-        <label>{tx("价目用途")}<select value={card.kind} onChange={(event) => setCard({ ...card, kind: event.target.value, target: "", currency: "USD" })}><option value="tenant">{tx("租户费用")}</option><option value="provider">{tx("上游成本")}</option></select></label>
-        <label>{tx("计价对象")}<select required value={card.target} onChange={(event) => setCard({ ...card, target: event.target.value })}><option value="">{tx("请选择")}</option>{card.kind === "tenant" ? data.models.map((model) => <option key={model.name} value={model.name}>{model.name}</option>) : data.providerModels.map((model) => <option key={model.id} value={`${model.provider_id}:${model.upstream_model}`}>{model.provider_id} / {model.upstream_model}</option>)}</select></label>
-        <label>{tx("币种")}<input required pattern="[A-Z]{3}" value={card.currency} readOnly={card.kind === "tenant"} onChange={(event) => setCard({ ...card, currency: event.target.value.toUpperCase() })} /></label>
+        <label>{tx("价目用途")}<select value={card.kind} onChange={(event) => setCard({ ...card, kind: event.target.value, target: "", currency: "USD" })}><option value="tenant">{tx("租户费用")}</option><option value="tenant_team">{tx("租户费用（按团队）")}</option><option value="provider">{tx("上游成本")}</option></select></label>
+        {card.kind === "tenant_team" ? <TeamModelTarget value={card.target} teams={data.resources["teams"] ?? []} models={data.models} onChange={(target) => setCard({ ...card, target })} /> : <label>{tx("计价对象")}<select required value={card.target} onChange={(event) => setCard({ ...card, target: event.target.value })}><option value="">{tx("请选择")}</option>{card.kind === "tenant" ? data.models.map((model) => <option key={model.name} value={model.name}>{model.name}</option>) : data.providerModels.map((model) => <option key={model.id} value={`${model.provider_id}:${model.upstream_model}`}>{model.provider_id} / {model.upstream_model}</option>)}</select></label>}
+        <label>{tx("币种")}<input required pattern="[A-Z]{3}" value={card.currency} readOnly={card.kind !== "provider"} onChange={(event) => setCard({ ...card, currency: event.target.value.toUpperCase() })} /></label>
         <label>{tx("价格依据")}<input required value={card.source} onChange={(event) => setCard({ ...card, source: event.target.value })} /></label>
       </div>
       <RateFields rates={card.rates} update={(key, value) => setCard({ ...card, rates: { ...card.rates, [key]: value } })} />
@@ -107,4 +107,17 @@ export function BillingRateCards({ api, data }: { api: ApiContext; data: AppData
     {evidence ? <pre>{JSON.stringify(evidence, null, 2)}</pre> : null}
     </div>
   </DataSection>;
+}
+
+
+type TeamOption = { id: string; name: string };
+
+function TeamModelTarget({ value, teams, models, onChange }: { value: string; teams: TeamOption[]; models: { name: string }[]; onChange: (target: string) => void }) {
+  const separator = value.indexOf(":");
+  const teamID = separator > 0 ? value.slice(0, separator) : "";
+  const modelName = separator > 0 ? value.slice(separator + 1) : "";
+  return <>
+    <label>{tx("计价团队")}<select required value={teamID} onChange={(event) => onChange(`${event.target.value}:${modelName}`)}><option value="">{tx("请选择")}</option>{teams.map((team) => <option key={team.id} value={team.id}>{team.name} ({team.id})</option>)}</select></label>
+    <label>{tx("计价模型")}<select required value={modelName} onChange={(event) => onChange(`${teamID}:${event.target.value}`)}><option value="">{tx("请选择")}</option>{models.map((model) => <option key={model.name} value={model.name}>{model.name}</option>)}</select></label>
+  </>;
 }
