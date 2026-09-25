@@ -26,7 +26,8 @@ var sensitiveAdminResourceFields = map[string]map[string]bool{
 		"whatsapp_access_token": true,
 	},
 	"settings": {
-		"provider_proxy_password": true,
+		"provider_proxy_password":  true,
+		"registration_invite_code": true,
 	},
 }
 

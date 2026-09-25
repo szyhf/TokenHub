@@ -11,6 +11,7 @@ for (const probe of [
   test(`isolation rejects ${probe.name}`, async ({ context, page }) => {
     const api = new MockAPI();
     api.respond("GET", "/api/admin/auth/identity-providers", { data: [] });
+    api.respond("GET", "/api/admin/auth/registration-status", { allowed: false });
     await api.install(context);
     await page.goto("/");
     await expect(page.getByRole("button", { name: "登录控制台" })).toBeVisible();
@@ -27,6 +28,7 @@ for (const probe of [
 test("isolation rejects malformed fixture payloads", async ({ context, page }) => {
   const api = new MockAPI();
   api.respond("GET", "/api/admin/auth/identity-providers", { data: [] });
+  api.respond("GET", "/api/admin/auth/registration-status", { allowed: false });
   api.define("POST", "/api/admin/check-payload", input => {
     if (input.body !== "expected") throw new Error("Expected the declared payload");
     return { json: { ok: true } };
@@ -42,6 +44,7 @@ test("isolation rejects malformed fixture payloads", async ({ context, page }) =
 test("isolation rejects WebSockets without connecting upstream", async ({ context, page }) => {
   const api = new MockAPI();
   api.respond("GET", "/api/admin/auth/identity-providers", { data: [] });
+  api.respond("GET", "/api/admin/auth/registration-status", { allowed: false });
   await api.install(context);
   await page.goto("/");
   await expect(page.getByRole("button", { name: "登录控制台" })).toBeVisible();
@@ -53,6 +56,7 @@ test("isolation rejects WebSockets without connecting upstream", async ({ contex
 test("isolation requires an explicit query contract", async ({ context, page }) => {
   const api = new MockAPI();
   api.respond("GET", "/api/admin/auth/identity-providers", { data: [] });
+  api.respond("GET", "/api/admin/auth/registration-status", { allowed: false });
   api.define("GET", "/api/admin/query-example", () => ({ json: { page: 1 } }), query => {
     expect([...query.entries()]).toEqual([["page", "1"]]);
   });

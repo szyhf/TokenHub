@@ -1,10 +1,11 @@
 import { Database, Eye, EyeOff, Fingerprint, KeyRound, LockKeyhole, Moon, ReceiptText, Route, ShieldCheck, Sun, UserRound, UserRoundCheck, Users } from "lucide-react";
-import { type FormEvent, useRef, useState } from "react";
+import { type FormEvent, useEffect, useRef, useState } from "react";
 import { savePendingOAuthLogin } from "../core/session";
 import { type AppData, type LoginIdentityProvider, type PluginDescriptor, viewRoutes } from "../core/types";
 import { stringifyValue } from "../domain/entities";
 import { identityProviderIconLabel } from "../domain/labels";
 import { buildOAuthLoginStartURL, createOAuthLoginPKCE } from "../domain/oauth-login";
+import { RegisterView } from "./register-view";
 import { LanguageSelect } from "../i18n/language-switcher";
 import { activeLanguage, type AppLanguage, tx } from "../i18n/runtime";
 
@@ -711,11 +712,36 @@ export function LoginView({
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [ssoLoading, setSSOLoading] = useState(false);
   const [ssoError, setSSOError] = useState("");
+  const [registrationAllowed, setRegistrationAllowed] = useState(false);
+  const [registerOpen, setRegisterOpen] = useState(false);
+  const [registerNotice, setRegisterNotice] = useState("");
   const ssoStarting = useRef(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch(`${baseURL.replace(/\/$/, "")}/api/admin/auth/registration-status`)
+      .then(resp => (resp.ok ? resp.json() : null))
+      .then(payload => {
+        if (!cancelled && payload && payload.allowed === true) {
+          setRegistrationAllowed(true);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [baseURL]);
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     onLogin(identity, password);
+  }
+
+  function handleRegistered(registeredUsername: string) {
+    setRegisterOpen(false);
+    setRegisterNotice(tx("注册成功，请登录"));
+    setIdentity(registeredUsername);
+    setPassword("");
   }
 
   const ssoListClassName = [
@@ -778,6 +804,14 @@ export function LoginView({
           </div>
         </aside>
 
+        {registerOpen ? (
+          <RegisterView
+            baseURL={baseURL}
+            busy={loading}
+            onBack={() => setRegisterOpen(false)}
+            onRegistered={handleRegistered}
+          />
+        ) : (
         <form className="login-card" onSubmit={submit}>
           <div className="login-card-head">
             <h1>{tx("欢迎回来")}</h1>
@@ -820,6 +854,13 @@ export function LoginView({
             <span />
             <button type="button">{tx("忘记密码？")}</button>
           </div>
+          {registrationAllowed ? (
+            <div className="login-helper-row">
+              <span />
+              <button onClick={() => { setRegisterOpen(true); setRegisterNotice(""); }} type="button">{tx("注册老师账号")}</button>
+            </div>
+          ) : null}
+          {registerNotice ? <div className="login-error">{registerNotice}</div> : null}
           {error || ssoError ? <div className="login-error">{error || ssoError}</div> : null}
           <button className="button login-submit" disabled={loading} type="submit">
             {loading ? tx("登录中") : tx("登录控制台")}
@@ -871,6 +912,7 @@ export function LoginView({
             </>
           ) : null}
         </form>
+        )}
       </section>
     </main>
   );

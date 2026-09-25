@@ -62,6 +62,34 @@ export const teacherTest = base.extend<{ api: MockAPI }>({
   }, { auto: true }],
 });
 
+// publicTest boots without a seeded console session so scenarios can cover
+// the sign-in and registration surfaces.
+export const publicTest = base.extend<{ api: MockAPI }>({
+  api: [async ({ context, page }, runScenario) => {
+    const api = new MockAPI();
+    for (const [key, json] of shellResponses()) {
+      const [method, pathname] = key.split(" ");
+      api.respond(method, pathname, json);
+    }
+    await api.install(context);
+    await page.clock.setFixedTime(new Date(fixedTime));
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await context.addInitScript(({ languageKey }) => {
+      window.localStorage.setItem(languageKey, "zh-CN");
+    }, { languageKey: languageStorageKey });
+    const pageErrors: string[] = [];
+    context.on("page", opened => opened.on("pageerror", error => pageErrors.push(error.message)));
+    page.on("pageerror", error => pageErrors.push(error.message));
+    try {
+      await runScenario(api);
+    } finally {
+      await context.close();
+      api.assertClean();
+      expect(pageErrors, "Unexpected application errors").toEqual([]);
+    }
+  }, { auto: true }],
+});
+
 export { expect };
 
 export function section(page: Page, title: string): Locator {

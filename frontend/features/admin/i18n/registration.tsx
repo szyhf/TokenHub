@@ -1,0 +1,26 @@
+export const registrationTranslations: Record<"en" | "ja", Record<string, string>> = {
+  en: {
+    "注册老师账号": "Register a teacher account",
+    "邀请码": "Invite code",
+    "姓名（可选）": "Name (optional)",
+    "设置密码": "Set password",
+    "确认密码": "Confirm password",
+    "创建账号": "Create account",
+    "返回登录": "Back to sign in",
+    "注册中": "Registering",
+    "注册请求失败": "Registration request failed",
+    "注册成功，请登录": "Registration succeeded; please sign in",
+  },
+  ja: {
+    "注册老师账号": "教師アカウントの登録",
+    "邀请码": "招待コード",
+    "姓名（可选）": "氏名（任意）",
+    "设置密码": "パスワード設定",
+    "确认密码": "パスワード確認",
+    "创建账号": "アカウント作成",
+    "返回登录": "ログインに戻る",
+    "注册中": "登録中",
+    "注册请求失败": "登録リクエストに失敗しました",
+    "注册成功，请登录": "登録が完了しました。ログインしてください",
+  },
+};

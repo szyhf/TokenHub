@@ -204,6 +204,15 @@ Provider 渠道分为平台自有与团队自有两类。团队自有渠道带�
 
 这是课堂委托场景的基础：老师自带上游 API 配置并管理其下的账号，路由层随后可以把模型路由限定到该团队。
 
+## 老师自助注册
+
+控制台登录页可以开启邀请码自助注册。在**系统设置 → 基础设置**（`cfg_gateway`）中设置 `allow_self_registration` 与管理员签发的 `registration_invite_code`；邀请码与其他敏感设置字段一样加密存储。
+
+- 注册默认关闭；开关开启但未配置邀请码时按关闭处理（fail closed）。
+- 注册成功会创建一个团队和一个绑定该团队的 `team_leader` 账号；邀请码使用常量时间比较，公开接口同时强制密码策略（至少 10 位且包含字母和数字）与按 IP 的尝试频率窗口。
+- 用户名重复返回 `409`；这会暴露用户名是否存在，与登录端点的行为一致。
+- 整个流程会记录 `register` 审计事件。
+
 ## 自定义上游请求头
 
 在「Provider 渠道」中，可以在 Provider 连接设置或 Provider Resource 高级设置里添加固定自定义请求头。Provider 请求头是默认值；Resource 中名称相同（不区分大小写）的请求头会在该次实际路由尝试中覆盖 Provider 值。因此切换账号资源时，TokenHub 会为每个选中的 Resource 重新计算最终请求头。例如，可在 Provider 级设置 `User-Agent: TokenHub-Custom-Client/1.0`，再在各 Resource 上分别覆盖 `X-Tenant`。

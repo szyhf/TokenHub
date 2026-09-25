@@ -204,6 +204,15 @@ Provider Channels are either platform-owned or team-owned. A team-owned Provider
 
 This is the foundation for delegated classrooms: a teacher brings their own upstream API configuration, manages accounts under it, and the routing layer can then scope model routes to that team.
 
+## Teacher Self-Registration
+
+The console login page can offer invite-code self-registration. In **System Settings → General Settings** (`cfg_gateway`), set `allow_self_registration` and an admin-issued `registration_invite_code`; the code is stored encrypted like other sensitive settings fields.
+
+- Registration is disabled by default and fails closed when the toggle is on but no code is configured.
+- A successful registration creates one team plus one `team_leader` account bound to it; the invite code is compared in constant time, and the public endpoint enforces a password policy (at least 10 characters with a letter and a digit) plus a per-IP attempt window.
+- A duplicate username answers `409`; this reveals whether a username exists, matching the login endpoint's behavior.
+- The whole flow is audited as a `register` event.
+
 ## Custom Upstream Request Headers
 
 In **Provider Channels**, add fixed custom request headers under a Provider's connection settings or under a Provider Resource's advanced settings. Provider headers are defaults; a Resource header with the same case-insensitive name overrides the Provider value for that actual routing attempt. This makes per-account failover safe: TokenHub recomputes the effective headers for every selected Resource. For example, set `User-Agent: TokenHub-Custom-Client/1.0` at Provider scope and override `X-Tenant` on individual Resources.
