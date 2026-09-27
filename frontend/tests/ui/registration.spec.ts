@@ -24,7 +24,9 @@ publicTest("registration invite-code teacher signup", async ({ page, api }, test
 
   await form.getByRole("button", { name: "创建账号", exact: true }).click();
   await expect(page.getByText("注册成功，请登录")).toBeVisible();
-  await expect(page.locator(".login-card").getByLabel("账号 / 邮箱", { exact: false })).toHaveValue("ui-teacher");
+  const loginCard = page.locator(".login-card");
+  await expect(loginCard.getByLabel("账号 / 邮箱", { exact: false })).toHaveValue("ui-teacher");
+  await expect(loginCard.getByLabel("密码", { exact: true })).toBeFocused();
 
   const registerCalls = api.calls.filter(call => call.path === "/api/admin/auth/register");
   expect(registerCalls).toHaveLength(1);

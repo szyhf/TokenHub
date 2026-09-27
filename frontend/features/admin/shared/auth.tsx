@@ -715,6 +715,7 @@ export function LoginView({
   const [registrationAllowed, setRegistrationAllowed] = useState(false);
   const [registerOpen, setRegisterOpen] = useState(false);
   const [registerNotice, setRegisterNotice] = useState("");
+  const passwordInputRef = useRef<HTMLInputElement>(null);
   const ssoStarting = useRef(false);
 
   useEffect(() => {
@@ -743,6 +744,12 @@ export function LoginView({
     setIdentity(registeredUsername);
     setPassword("");
   }
+
+  useEffect(() => {
+    if (registerNotice) {
+      passwordInputRef.current?.focus();
+    }
+  }, [registerNotice]);
 
   const ssoListClassName = [
     "login-sso-list",
@@ -835,6 +842,7 @@ export function LoginView({
               <LockKeyhole aria-hidden="true" className="password-leading-icon" size={18} />
               <input
                 placeholder={tx("请输入密码")}
+                ref={passwordInputRef}
                 value={password}
                 type={passwordVisible ? "text" : "password"}
                 onChange={(event) => setPassword(event.target.value)}

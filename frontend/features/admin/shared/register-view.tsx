@@ -44,6 +44,7 @@ export function RegisterView({
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [passwordVisible, setPasswordVisible] = useState(false);
+  const [confirmVisible, setConfirmVisible] = useState(false);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
@@ -143,15 +144,25 @@ export function RegisterView({
       </label>
       <label>
         <span>{tx("确认密码")}</span>
-        <input
-          aria-label={tx("确认密码")}
-          autoComplete="new-password"
-          minLength={10}
-          onChange={(event) => setConfirmPassword(event.target.value)}
-          required
-          type={passwordVisible ? "text" : "password"}
-          value={confirmPassword}
-        />
+        <span className="password-field">
+          <input
+            aria-label={tx("确认密码")}
+            autoComplete="new-password"
+            minLength={10}
+            onChange={(event) => setConfirmPassword(event.target.value)}
+            required
+            type={confirmVisible ? "text" : "password"}
+            value={confirmPassword}
+          />
+          <button
+            aria-label={confirmVisible ? tx("隐藏密码") : tx("显示密码")}
+            className="password-toggle"
+            onClick={() => setConfirmVisible((value) => !value)}
+            type="button"
+          >
+            {confirmVisible ? <EyeOff size={16} /> : <Eye size={16} />}
+          </button>
+        </span>
       </label>
       {error ? <div className="login-error">{error}</div> : null}
       <button className="button login-submit" disabled={submitting || busy} type="submit">
