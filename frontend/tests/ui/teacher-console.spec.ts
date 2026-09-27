@@ -1,4 +1,4 @@
-import type { AdminResource, Provider } from "../../features/admin/core/types";
+import type { Provider } from "../../features/admin/core/types";
 import { teacherTest, expect, capture } from "./harness";
 
 teacherTest("teacher-console provider ownership scope", async ({ page, api }, testInfo) => {
