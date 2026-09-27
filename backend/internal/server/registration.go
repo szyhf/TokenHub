@@ -122,7 +122,7 @@ func (s *Server) handleAdminRegister(w http.ResponseWriter, r *http.Request) {
 		writeError(w, r, err)
 		return
 	}
-	clientKey := clientIPKey(r)
+	clientKey := s.clientIP(r)
 	if !registrationAttempts.allow(clientKey, time.Now().UTC()) {
 		writeError(w, r, NewHTTPError(http.StatusTooManyRequests, "registration_rate_limited",
 			"Too many registration attempts; try again later"))
@@ -198,12 +198,4 @@ func (s *Server) handleAdminRegister(w http.ResponseWriter, r *http.Request) {
 		"role":     user.Role,
 	})
 	writeJSON(w, http.StatusCreated, map[string]any{"user": user})
-}
-
-func clientIPKey(r *http.Request) string {
-	host := r.RemoteAddr
-	if index := strings.LastIndex(host, ":"); index > 0 {
-		host = host[:index]
-	}
-	return strings.TrimSpace(host)
 }

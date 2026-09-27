@@ -37,6 +37,11 @@ func (s *Server) executeProviderResourceModelsActionForCatalog(ctx context.Conte
 	if catalogProviderType = strings.TrimSpace(catalogProviderType); catalogProviderType != "" && provider.Type != catalogProviderType {
 		return ProviderCatalogEntry{}, false, NewHTTPError(http.StatusBadRequest, "provider_resource_catalog_mismatch", "Provider resource does not belong to this provider catalog")
 	}
+	// The probe runs on the resource's stored credentials, so a team leader
+	// may only point it at a resource their own team owns.
+	if !canManageProviderOwnedBy(user, provider.OwnerTeamID) {
+		return ProviderCatalogEntry{}, false, NewHTTPError(http.StatusForbidden, "provider_forbidden", "Provider is not owned by your team")
+	}
 	result, handled, err := s.executeProviderCapabilityAction(ctx, user, provider.Type, AdapterCapabilityModels, "models.read", map[string]any{
 		"resource_id": resourceID,
 	}, providerPluginActionOptions{ResourceType: resource.ResourceType})

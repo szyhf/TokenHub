@@ -170,6 +170,11 @@ func (s *Server) handleAdminProviderCatalogItem(w http.ResponseWriter, r *http.R
 			resourceID = s.providerCatalogActiveAccountResourceID(entry.Type, true)
 		}
 		if resourceID != "" {
+			// Both the probe and the fallback query run on the resource's
+			// stored credentials, so foreign resources must never resolve.
+			if _, ok := s.requireProviderResourceWithinActorScope(w, r, user, resourceID); !ok {
+				return
+			}
 			pluginEntry, supported, actionErr := s.executeProviderResourceModelsActionForCatalog(r.Context(), user, entry.Type, resourceID)
 			if actionErr != nil {
 				writeError(w, r, actionErr)

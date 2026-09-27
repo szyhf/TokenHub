@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"strings"
@@ -307,5 +308,91 @@ func TestProviderEgressTestStaysPlatformAdminOnly(t *testing.T) {
 	}, adminToken)
 	if allowed.Code == http.StatusForbidden {
 		t.Fatalf("admin egress test should not be forbidden: %d %s", allowed.Code, allowed.Body)
+	}
+}
+
+func TestCatalogResourceProbeIsOwnershipScoped(t *testing.T) {
+	store := NewMemoryStore()
+	store.CreateResource("teams", AdminResource{ID: "team_a", Name: "Team A", Status: StatusActive})
+	store.CreateResource("teams", AdminResource{ID: "team_b", Name: "Team B", Status: StatusActive})
+	leaderA, err := store.CreateAdminUser(AdminUser{
+		Username: "probe-leader-a", Name: "Probe Leader A", Email: "probe-a@tokenhub.local",
+		Role: "team_leader", TeamID: "team_a", Status: StatusActive,
+	}, "leader123456")
+	if err != nil {
+		t.Fatal(err)
+	}
+	teamProvider := store.AddProvider(Provider{ID: "prv_probe_a", Name: "Probe A", Type: ProviderMock, OwnerTeamID: "team_a", Priority: 10})
+	foreignProvider := store.AddProvider(Provider{ID: "prv_probe_b", Name: "Probe B", Type: ProviderMock, OwnerTeamID: "team_b", Priority: 10})
+	ownResource, err := store.AddProviderResource(ProviderResource{ProviderID: teamProvider.ID, Name: "Own Key", Status: StatusActive})
+	if err != nil {
+		t.Fatal(err)
+	}
+	foreignResource, err := store.AddProviderResource(ProviderResource{ProviderID: foreignProvider.ID, Name: "Foreign Key", Status: StatusActive})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	server := New(store)
+	blocked, supported, err := server.executeProviderResourceModelsActionForCatalog(context.Background(), leaderA, ProviderMock, foreignResource.ID)
+	if supported || err == nil {
+		t.Fatalf("foreign resource probe must be rejected: supported=%v err=%v", supported, err)
+	}
+	if AsHTTPError(err).Code != "provider_forbidden" {
+		t.Fatalf("foreign resource probe should answer provider_forbidden, got %v", err)
+	}
+	_ = blocked
+
+	if _, _, err := server.executeProviderResourceModelsActionForCatalog(context.Background(), leaderA, ProviderMock, ownResource.ID); isForbiddenProviderError(err) {
+		t.Fatalf("own resource probe must not be forbidden: %v", err)
+	}
+}
+
+func isForbiddenProviderError(err error) bool {
+	if err == nil {
+		return false
+	}
+	return AsHTTPError(err).Code == "provider_forbidden"
+}
+
+func TestProviderModelsListIsOwnershipScoped(t *testing.T) {
+	store := NewMemoryStore()
+	store.CreateResource("teams", AdminResource{ID: "team_a", Name: "Team A", Status: StatusActive})
+	store.CreateResource("teams", AdminResource{ID: "team_b", Name: "Team B", Status: StatusActive})
+	if _, err := store.CreateAdminUser(AdminUser{
+		Username: "models-admin", Name: "Models Admin", Email: "models-admin@tokenhub.local",
+		Role: "admin", Status: StatusActive,
+	}, "admin123456"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := store.CreateAdminUser(AdminUser{
+		Username: "models-leader", Name: "Models Leader", Email: "models-leader@tokenhub.local",
+		Role: "team_leader", TeamID: "team_a", Status: StatusActive,
+	}, "leader123456"); err != nil {
+		t.Fatal(err)
+	}
+	ownProvider := store.AddProvider(Provider{ID: "prv_models_a", Name: "Models A", Type: ProviderMock, OwnerTeamID: "team_a", Priority: 10})
+	foreignProvider := store.AddProvider(Provider{ID: "prv_models_b", Name: "Models B", Type: ProviderMock, OwnerTeamID: "team_b", Priority: 10})
+	store.AddProviderModel(ProviderModel{ProviderID: ownProvider.ID, UpstreamModel: "own-upstream"})
+	store.AddProviderModel(ProviderModel{ProviderID: foreignProvider.ID, UpstreamModel: "foreign-upstream"})
+
+	app := New(store).Handler()
+	adminToken := providerTenancyLoginToken(t, app, "models-admin@tokenhub.local", "admin123456")
+	leaderToken := providerTenancyLoginToken(t, app, "models-leader@tokenhub.local", "leader123456")
+
+	leaderList := doJSON(t, app, http.MethodGet, "/api/admin/provider-models", nil, leaderToken)
+	if leaderList.Code != http.StatusOK {
+		t.Fatalf("team leader provider-models list failed: %d %s", leaderList.Code, leaderList.Body)
+	}
+	if !strings.Contains(leaderList.Body, "own-upstream") {
+		t.Fatalf("team leader should see own provider inventory: %s", leaderList.Body)
+	}
+	if strings.Contains(leaderList.Body, "foreign-upstream") {
+		t.Fatalf("team leader must not see foreign provider inventory: %s", leaderList.Body)
+	}
+
+	adminList := doJSON(t, app, http.MethodGet, "/api/admin/provider-models", nil, adminToken)
+	if adminList.Code != http.StatusOK || !strings.Contains(adminList.Body, "own-upstream") || !strings.Contains(adminList.Body, "foreign-upstream") {
+		t.Fatalf("admin should see the full inventory: %d %s", adminList.Code, adminList.Body)
 	}
 }

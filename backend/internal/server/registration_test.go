@@ -3,6 +3,8 @@ package server
 import (
 	"encoding/json"
 	"net/http"
+	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 )
@@ -186,5 +188,44 @@ func TestRegistrationRateLimitBrutesInviteCode(t *testing.T) {
 	}
 	if lastCode != http.StatusTooManyRequests {
 		t.Fatalf("repeated registration attempts should be rate limited, got %d", lastCode)
+	}
+}
+
+func TestRegistrationRateLimitUsesForwardedClientIP(t *testing.T) {
+	registrationAttempts.mu.Lock()
+	registrationAttempts.attempts = map[string][]time.Time{}
+	registrationAttempts.mu.Unlock()
+	store := NewMemoryStore()
+	server := NewWithConfig(store, Config{AdminToken: "registration-proxy-admin", TrustedProxyCIDRs: []string{"127.0.0.0/8", "192.0.2.0/24"}})
+	app := server.Handler()
+	enableRegistration(t, store, "classroom-invite")
+
+	register := func(xff string) int {
+		request := httptest.NewRequest(http.MethodPost, "/api/admin/auth/register", strings.NewReader(`{"username":"proxy-user","email":"proxy@school.test","password":"teacher123456","invite_code":"wrong"}`))
+		request.Header.Set("Content-Type", "application/json")
+		if xff != "" {
+			request.Header.Set("X-Forwarded-For", xff)
+		}
+		recorder := httptest.NewRecorder()
+		app.ServeHTTP(recorder, request)
+		return recorder.Code
+	}
+
+	// Exhaust the bucket of one forwarded client.
+	for i := 0; i < registrationMaxAttemptsPerIP; i++ {
+		if code := register("203.0.113.10"); code == http.StatusTooManyRequests {
+			t.Fatalf("bucket should not exhaust before the limit")
+		}
+	}
+	if code := register("203.0.113.10"); code != http.StatusTooManyRequests {
+		t.Fatalf("exhausted forwarded client should be limited, got %d", code)
+	}
+	// A different forwarded client keeps its own bucket.
+	if code := register("203.0.113.11"); code == http.StatusTooManyRequests {
+		t.Fatal("a second forwarded client must not share the first client's bucket")
+	}
+	// A non-proxied caller (no XFF) uses the socket address bucket.
+	if code := register(""); code == http.StatusTooManyRequests {
+		t.Fatal("the direct client must not share forwarded clients' buckets")
 	}
 }

@@ -82,11 +82,27 @@ func (patch providerModelPatchRequest) withCurrentCosts(current ProviderModel) P
 }
 
 func (s *Server) handleAdminProviderModels(w http.ResponseWriter, r *http.Request) {
-	if _, ok := s.requireAdmin(w, r, "provider", r.Method); !ok {
+	user, ok := s.requireAdmin(w, r, "provider", r.Method)
+	if !ok {
 		return
 	}
 	providerID := strings.TrimSpace(r.URL.Query().Get("provider_id"))
 	models := s.store.ListProviderModels()
+	if !isPlatformAdminRole(normalizeAdminRole(user.Role)) {
+		// Upstream model inventory is provider metadata; team leaders only
+		// see the inventory of providers their team manages.
+		owned := make(map[string]bool)
+		for _, provider := range s.filterProvidersForActor(user, s.store.ListProviders()) {
+			owned[provider.ID] = true
+		}
+		scoped := make([]ProviderModel, 0, len(models))
+		for _, model := range models {
+			if owned[model.ProviderID] {
+				scoped = append(scoped, model)
+			}
+		}
+		models = scoped
+	}
 	if providerID != "" {
 		filtered := make([]ProviderModel, 0, len(models))
 		for _, model := range models {
