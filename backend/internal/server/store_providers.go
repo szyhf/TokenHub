@@ -18,7 +18,33 @@ import (
 func (s *GormStore) AddProvider(provider Provider) Provider {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	return s.addProviderLocked(provider)
+}
 
+// AddProviderScoped inserts a provider with create semantics and the
+// ownership invariant checked inside the store lock: an existing ID is a
+// conflict (no upsert replay) and the owner team can never be changed
+// through this path, so a concurrent create can neither hijack nor
+// re-own a row. Platform tooling that intentionally re-upserts rows keeps
+// using AddProvider.
+func (s *GormStore) AddProviderScoped(provider Provider) (Provider, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if provider.ID != "" {
+		var existing Provider
+		if err := s.db.First(&existing, "id = ?", provider.ID).Error; err == nil {
+			if existing.OwnerTeamID != provider.OwnerTeamID {
+				return Provider{}, NewHTTPError(http.StatusConflict, "provider_conflict", "Provider already exists with a different owner")
+			}
+			if provider.OwnerTeamID != "" {
+				return Provider{}, NewHTTPError(http.StatusConflict, "provider_conflict", "Provider already exists")
+			}
+		}
+	}
+	return s.addProviderLocked(provider), nil
+}
+
+func (s *GormStore) addProviderLocked(provider Provider) Provider {
 	if provider.ID == "" {
 		provider.ID = NewID("prv")
 	}

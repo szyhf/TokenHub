@@ -49,7 +49,13 @@ func (s *Server) handleAdminProvidersPost(w http.ResponseWriter, r *http.Request
 		writeError(w, r, err)
 		return
 	}
-	created := s.store.AddProvider(provider)
+	// The scoped insert carries the ownership invariant inside the store
+	// lock; the actor pre-check above stays as the fast user-facing path.
+	created, err := s.store.AddProviderScoped(provider)
+	if err != nil {
+		writeError(w, r, err)
+		return
+	}
 	result := ProviderCreateResult{
 		Provider:      created,
 		CatalogSource: catalogSource,

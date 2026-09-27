@@ -396,3 +396,39 @@ func TestProviderModelsListIsOwnershipScoped(t *testing.T) {
 		t.Fatalf("admin should see the full inventory: %d %s", adminList.Code, adminList.Body)
 	}
 }
+
+func TestAddProviderScopedEnforcesOwnershipInvariant(t *testing.T) {
+	store := NewMemoryStore()
+	store.CreateResource("teams", AdminResource{ID: "team_scope", Name: "Scope Team", Status: StatusActive})
+
+	created, err := store.AddProviderScoped(Provider{ID: "prv_scoped", Name: "Scoped", Type: ProviderMock, OwnerTeamID: "team_scope"})
+	if err != nil {
+		t.Fatalf("first scoped insert failed: %v", err)
+	}
+	if created.ID != "prv_scoped" {
+		t.Fatalf("scoped insert should keep the requested ID: %+v", created)
+	}
+
+	if _, err := store.AddProviderScoped(Provider{ID: "prv_scoped", Name: "Replay", Type: ProviderMock, OwnerTeamID: "team_scope"}); err == nil {
+		t.Fatal("replaying a team-owned provider ID must conflict")
+	}
+
+	if _, err := store.AddProviderScoped(Provider{ID: "prv_scoped", Name: "Hijack", Type: ProviderMock, OwnerTeamID: "team_other"}); err == nil {
+		t.Fatal("changing the owner team of an existing provider must conflict")
+	}
+
+	if _, err := store.AddProviderScoped(Provider{ID: "prv_scoped", Name: "Hijack To Team", Type: ProviderMock}); err == nil {
+		t.Fatal("re-owning an existing provider through create must conflict")
+	}
+
+	row, ok := store.GetProvider("prv_scoped")
+	if !ok || row.OwnerTeamID != "team_scope" || row.Name != "Scoped" {
+		t.Fatalf("original row must be untouched: %+v found=%v", row, ok)
+	}
+
+	// Platform upsert replay keeps its legacy behavior for operator tooling.
+	replayed := store.AddProvider(Provider{ID: "prv_scoped", Name: "Replayed", Type: ProviderMock})
+	if replayed.Name != "Replayed" {
+		t.Fatalf("platform AddProvider replay should upsert: %+v", replayed)
+	}
+}
