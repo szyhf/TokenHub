@@ -1,6 +1,6 @@
 import { Activity, BarChart3, Bell, Database, FileText, ShieldCheck } from "lucide-react";
 import { type AdminResource, type AdminUser, type AlertDelivery, type AlertEvent, type ApiContext, type ApprovalRequest, type FieldConfig, type ResourceConfig, type SQLiteBackup, type ToolbarAction } from "../core/types";
-import { roleDisplayLabel, roleSelectOptions, stringifyValue, teamSelectOptions, userTeamIDs, userTeamLabels } from "../domain/entities";
+import { ownerUserLabel, roleDisplayLabel, roleSelectOptions, stringifyValue, teamSelectOptions, userSelectOptions, userTeamIDs, userTeamLabels } from "../domain/entities";
 import { formatMoney, formatTime } from "../domain/formatting";
 import { alertMetricLabel, approvalPayloadSummary, approvalStatusLabel, approvalTriggerLabel, compactList, numberFromUnknown, reportDatasetLabel, reportScheduleLabel, resourceTypeLabel, roleLabel } from "../domain/labels";
 import { tx } from "../i18n/runtime";
@@ -196,7 +196,7 @@ export function approvalConfig(): ResourceConfig<ApprovalRequest> {
 export function costCenterConfig(): ResourceConfig<AdminResource> {
   const fields: FieldConfig[] = [
     { key: "code", label: "成本中心编码", required: true },
-    { key: "owner", label: "负责人" },
+    { key: "owner", label: "负责人", type: "select", optionsFromData: userSelectOptions, help: "从用户管理中选择成本中心负责人；仅作记录与报表展示，不影响权限与费用归集。" },
     { key: "department", label: "部门" },
     { key: "monthly_budget_usd", label: "月预算 USD", type: "number" },
   ];
@@ -206,7 +206,7 @@ export function costCenterConfig(): ResourceConfig<AdminResource> {
       { key: "code", label: "编码", render: (item) => stringifyValue(item.fields?.code) || item.id },
       { key: "name", label: "名称" },
       { key: "department", label: "部门", render: (item) => stringifyValue(item.fields?.department) || "-" },
-      { key: "owner", label: "负责人", render: (item) => stringifyValue(item.fields?.owner) || "-" },
+      { key: "owner", label: "负责人", render: (item, ctx) => ownerUserLabel(ctx, stringifyValue(item.fields?.owner)) },
       { key: "monthly_budget_usd", label: "月预算", render: (item) => `$${formatMoney(numberFromUnknown(item.fields?.monthly_budget_usd))}` },
       { key: "status", label: "状态", render: (item) => <StatusPill status={item.status} /> },
     ],
