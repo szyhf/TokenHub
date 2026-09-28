@@ -1,6 +1,6 @@
 services:
   tokenhub-backend:
-    image: ghcr.io/astaxie/tokenhub-backend:${TOKENHUB_IMAGE_TAG:-latest}
+    image: registry.cn-shenzhen.aliyuncs.com/szyhf/tokenhub:${TOKENHUB_IMAGE_TAG:-latest}
     scale: ${TOKENHUB_BACKEND_REPLICAS:-2}
     build:
       context: ..
@@ -82,7 +82,7 @@ services:
       - tokenhub
 
   tokenhub-frontend:
-    image: ghcr.io/astaxie/tokenhub-backend:${TOKENHUB_IMAGE_TAG:-latest}
+    image: registry.cn-shenzhen.aliyuncs.com/szyhf/tokenhub:${TOKENHUB_IMAGE_TAG:-latest}
     scale: ${TOKENHUB_FRONTEND_REPLICAS:-2}
     build:
       context: ..

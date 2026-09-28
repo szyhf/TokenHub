@@ -1,7 +1,7 @@
 services:
   tokenhub-backend:
     container_name: tokenhub-backend
-    image: ghcr.io/astaxie/tokenhub-backend:${TOKENHUB_IMAGE_TAG:-latest}
+    image: registry.cn-shenzhen.aliyuncs.com/szyhf/tokenhub:${TOKENHUB_IMAGE_TAG:-latest}
     build:
       context: ..
       dockerfile: backend/Dockerfile
