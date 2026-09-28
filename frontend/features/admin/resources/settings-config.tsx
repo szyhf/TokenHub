@@ -181,6 +181,19 @@ export function systemSettingConfig(): ResourceConfig<AdminResource> {
       visible: (values) => values.provider_egress_mode === "configured_proxy" && values.provider_proxy_auth_enabled === "true",
     },
     {
+      key: "allow_self_registration",
+      label: "允许老师自助注册",
+      type: "boolean",
+      help: "开启后登录页出现「注册老师账号」入口；注册需邀请码，成功后创建一个团队和一个团队 Leader 账号。未配置邀请码时即使开启也按关闭处理。",
+    },
+    {
+      key: "registration_invite_code",
+      label: "注册邀请码",
+      type: "password",
+      autoComplete: "new-password",
+      help: "邀请码加密保存；编辑时留空表示保留原邀请码。注册时需要填写与此处一致的邀请码。",
+    },
+    {
       key: "provider_synthetic_dns_enabled",
       label: "允许 Provider 使用 Synthetic DNS / Fake-IP",
       type: "boolean",

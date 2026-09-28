@@ -10,6 +10,10 @@ export const registrationTranslations: Record<"en" | "ja", Record<string, string
     "注册中": "Registering",
     "注册请求失败": "Registration request failed",
     "注册成功，请登录": "Registration succeeded; please sign in",
+    "允许老师自助注册": "Allow teacher self-registration",
+    "开启后登录页出现「注册老师账号」入口；注册需邀请码，成功后创建一个团队和一个团队 Leader 账号。未配置邀请码时即使开启也按关闭处理。": "When enabled, the sign-in page shows a Register a teacher account entry; sign-up requires the invite code and creates one team plus one team leader account. With no invite code configured, the toggle is treated as off.",
+    "注册邀请码": "Registration invite code",
+    "邀请码加密保存；编辑时留空表示保留原邀请码。注册时需要填写与此处一致的邀请码。": "The invite code is stored encrypted; leave it blank when editing to keep the current code. Registrations must submit a code matching this value.",
   },
   ja: {
     "注册老师账号": "教師アカウントの登録",
@@ -22,5 +26,9 @@ export const registrationTranslations: Record<"en" | "ja", Record<string, string
     "注册中": "登録中",
     "注册请求失败": "登録リクエストに失敗しました",
     "注册成功，请登录": "登録が完了しました。ログインしてください",
+    "允许老师自助注册": "教師のセルフ登録を許可",
+    "开启后登录页出现「注册老师账号」入口；注册需邀请码，成功后创建一个团队和一个团队 Leader 账号。未配置邀请码时即使开启也按关闭处理。": "有効にするとログインページに「教師アカウントの登録」入口が表示されます。登録には招待コードが必要で、成功すると 1 つのチームと 1 つのチームリーダーアカウントが作成されます。招待コードが未設定の場合は無効として扱われます。",
+    "注册邀请码": "登録招待コード",
+    "邀请码加密保存；编辑时留空表示保留原邀请码。注册时需要填写与此处一致的邀请码。": "招待コードは暗号化して保存します。編集時に空欄の場合は現在のコードを保持します。登録時にはこの値と一致するコードの入力が必要です。",
   },
 };
