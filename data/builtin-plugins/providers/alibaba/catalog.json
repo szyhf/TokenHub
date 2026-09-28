@@ -3190,6 +3190,26 @@
         }
       },
       "type": "chat"
+    },
+    {
+      "id": "qwen3-rerank",
+      "name": "qwen3-rerank",
+      "display_name": "qwen3-rerank",
+      "type": "rerank",
+      "family": "qwen",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "metadata": {
+        "endpoints": "rerank",
+        "source": "official-documentation",
+        "pricing_status": "unverified"
+      }
     }
   ]
 }

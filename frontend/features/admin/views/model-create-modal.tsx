@@ -5,7 +5,7 @@ import { modelCategory, modelCategoryLabel, priceMetric } from "../domain/catalo
 import { customModelTemplateID, externalModelTemplateValues, filterReferenceModelTemplates, referenceModelTemplates } from "../domain/model-create-wizard";
 import { compactNumber } from "../domain/formatting";
 import { initialModelRoutes } from "../domain/provider-model-selection";
-import { tx } from "../i18n/runtime";
+import { modelCatalogTemplatesHintText, tx } from "../i18n/runtime";
 import { FieldInput } from "../shared/ui";
 import { ModelBrandIcon } from "./model-catalog";
 
@@ -119,7 +119,7 @@ export function ModelCreateModal({
         {step === 0 ? (
           <div className="model-create-catalog-step">
             <div className="model-create-intro">
-              <div><strong>{tx("模型参考目录")}</strong><span>{templates.length} {tx("个默认模型，可直接带出能力、上下文和建议价格。")}</span></div>
+              <div><strong>{tx("模型参考目录")}</strong><span>{modelCatalogTemplatesHintText(templates.length)}</span></div>
               <div className="model-create-filters">
                 <label className="search-box"><Search size={15} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={tx("搜索模型名称、系列或能力")} /></label>
                 <select aria-label={tx("模型分类")} value={category} onChange={(event) => setCategory(event.target.value)}>
@@ -193,6 +193,8 @@ export function ModelCreateModal({
                 {renderField("cache_read_price_usd_per_1m")}
                 {renderField("output_price_usd_per_1m")}
                 {renderField("embedding_price_usd_per_1m")}
+                {renderField("search_unit_price_usd")}
+                {renderField("retrieval_pricing_confirmed")}
               </div>
               <div className="model-create-pricing-note"><Info size={17} /><span>{tx("Provider 模型价格继续用于真实成本审计，不会覆盖此处的对外统一价格。")}</span></div>
             </section>

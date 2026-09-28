@@ -9,6 +9,7 @@ import { findProvider, modelRoutesFor } from "../domain/entities";
 import { modelDirectorySubtitle, modelDisplayName } from "../domain/model-display-name";
 import { modelMetadataFacts } from "../domain/model-endpoints";
 import { externalModels, filterExternalModels, isCustomModelAlias, modelPublicationState, modelRuntimeState, type ModelPublicationState } from "../domain/model-directory";
+import { modelTokenPriceMetric, formatRetrievalUSD } from "../domain/model-token-price";
 import { compactNumber } from "../domain/formatting";
 import { tx } from "../i18n/runtime";
 import { adminFetch, readAdminError } from "../resources/payloads";
@@ -235,7 +236,7 @@ function ExternalModelsTable({ api, data, models, readOnly, busy, onOpenRoutes, 
                     <div><strong>{title}</strong>{subtitle ? <span>{subtitle}</span> : null}</div>
                   </div>
                 </td>
-                <td><strong>{model.modality || "chat"}</strong><span>{compactNumber(model.context_window || 0)} ctx · {capabilities.slice(0, 2).join(" / ") || model.family || "-"}</span>{facts.map((fact) => <div key={fact.kind}><small>{tx({ protocols: "支持接口协议", parameters: "支持参数", capabilities: "模型能力" }[fact.kind])}: {fact.values.join(" / ")}</small></div>)}</td>
+                <td><strong>{model.modality || "chat"}</strong><span>{model.context_window ? `${compactNumber(model.context_window)} ctx · ` : ""}{capabilities.slice(0, 2).join(" / ") || model.family || "-"}</span>{facts.map((fact) => <div key={fact.kind}><small>{tx({ protocols: "支持接口协议", parameters: "支持参数", capabilities: "模型能力" }[fact.kind])}: {fact.values.join(" / ")}</small></div>)}</td>
                 {!readOnly ? <>
                   <td>
                     {primary ? <div className="mapping-summary"><span>{provider?.name || primary.provider_id}</span><strong>{primary.provider_model}</strong>{routes.length > 1 ? <em>+{routes.length - 1}</em> : null}</div> : <span className="muted">{tx("尚未映射 Provider")}</span>}
@@ -243,7 +244,7 @@ function ExternalModelsTable({ api, data, models, readOnly, busy, onOpenRoutes, 
                   <td><StatusPill status={publication === "published" ? "active" : "disabled"} label={tx(publicationLabel(publication))} /></td>
                   <td><RuntimeStatus state={runtime} active={activeRoutes.length} total={routes.length} /></td>
                 </> : <td><StatusPill status="active" label={tx("当前账号可用")} /></td>}
-                <td><strong>{priceMetric(model.input_price_usd_per_1m)}</strong><span>{tx("输入")} · {priceMetric(model.output_price_usd_per_1m)} {tx("输出")}</span></td>
+                <td>{model.modality === "rerank" && model.metadata?.search_unit_price_usd?.trim() ? <><strong>{formatRetrievalUSD(Number(model.metadata.search_unit_price_usd))}</strong><span>{tx("搜索单元价格 USD/次")}</span>{model.input_price_usd_per_1m != null ? <span>{tx("输入")} · {modelTokenPriceMetric(model)}</span> : null}</> : <><strong>{modelTokenPriceMetric(model)}</strong><span>{model.modality === "embedding" ? "Embedding" : tx("输入")}{model.modality !== "embedding" && model.modality !== "rerank" ? <> · {priceMetric(model.output_price_usd_per_1m)} {tx("输出")}</> : null}</span></>}</td>
                 {!readOnly ? (
                   <td><div className="directory-row-actions"><StatementLauncher api={api} side="tenant" model={model.name} /><button aria-label={`${tx("路由策略")}: ${model.name}`} className="text-button" onClick={() => onOpenRoutes(model)} type="button">{tx("路由策略")}</button><button className="text-button" onClick={() => onEdit(model)} type="button">{tx("编辑")}</button><button className="text-button" disabled={busy || (publication !== "published" && activeRoutes.length === 0)} onClick={() => onPublish(model, publication !== "published")} type="button">{tx(publication === "published" ? "下线" : "发布")}</button><button className="danger-button" onClick={() => onDelete(model)} type="button">{tx("删除")}</button></div></td>
                 ) : null}

@@ -11,6 +11,7 @@ const (
 	providerRouteProtocolChatCompletions = "chat/completions"
 	providerRouteProtocolCodexResponses  = "codex/responses"
 	providerRouteProtocolEmbeddings      = "embeddings"
+	providerRouteProtocolRerank          = "rerank"
 	providerRouteProtocolGemini          = "gemini"
 	providerRouteProtocolImageGeneration = "images/generations"
 	providerRouteProtocolResponses       = "responses"
@@ -18,6 +19,9 @@ const (
 
 func routeProviderProtocolsFromCapabilities(descriptor AdapterDescriptor) map[string]bool {
 	protocols := map[string]bool{}
+	if adapterSupports(descriptor, AdapterCapabilityRerank) {
+		protocols[providerRouteProtocolRerank] = true
+	}
 	if adapterSupports(descriptor, AdapterCapabilitySystemOne) {
 		protocols[providerRouteProtocolSystemOne] = true
 	}

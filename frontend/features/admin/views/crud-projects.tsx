@@ -9,7 +9,7 @@ import { formatNumber, formatTime } from "../domain/formatting";
 import { providerLatencyLabel, providerPerformanceExplanation, providerQualityScoreLabel } from "../domain/provider-monitoring";
 import { isProviderAccountResource } from "../domain/provider-resource-types";
 import { enumValueLabel, providerTypeLabelFromData, reportDatasetLabel, roleLabel } from "../domain/labels";
-import { countWithUnit, languageLocale, tx } from "../i18n/runtime";
+import { countWithLabel, countWithUnit, languageLocale, tx } from "../i18n/runtime";
 import { reportExportDefinitions } from "../resources/governance-config";
 import { providerOwnerLabel, providerPluginActionForResourceCapability, runProviderResourcePluginAction } from "../resources/provider-model-config";
 import { DataSection, SimpleTable, StatusPill } from "../shared/ui";
@@ -384,7 +384,7 @@ export function ProviderChannelTable({
                 </td>
                 <td>
                   <div className="provider-channel-routing">
-                    <strong>{importedModelCount} {tx("个已引入模型")}</strong>
+                    <strong>{countWithLabel(importedModelCount, "个已引入模型")}</strong>
                     <span title={routeSummary}>{routeSummary}</span>
                     <span title={accountDetail || undefined}>
                       {row.resources.length || 0} {tx("账号资源")}{accountDetail ? ` · ${accountDetail}` : ""} · P{formatNumber(row.provider.priority)}

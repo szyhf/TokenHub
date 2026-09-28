@@ -428,6 +428,54 @@ paths:
           $ref: "#/components/responses/AnthropicUnauthorized"
         "403":
           $ref: "#/components/responses/AnthropicModelNotAllowed"
+  /v1/rerank:
+    post:
+      operationId: rerankDocuments
+      tags: [Rerank]
+      summary: Rerank text documents.
+      description: Ranks candidate text documents for a query. Provider protocol and prices must be configured.
+      x-tokenhub-public-gateway: true
+      x-tokenhub-interactive: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RerankRequest"
+      responses:
+        "200":
+          description: Ranked documents.
+          headers:
+            x-request-id:
+              $ref: "#/components/headers/XRequestID"
+            x-ratelimit-limit-requests:
+              $ref: "#/components/headers/XRateLimitLimitRequests"
+            x-ratelimit-remaining-requests:
+              $ref: "#/components/headers/XRateLimitRemainingRequests"
+            x-ratelimit-reset-requests:
+              $ref: "#/components/headers/XRateLimitResetRequests"
+            x-ratelimit-limit-tokens:
+              $ref: "#/components/headers/XRateLimitLimitTokens"
+            x-ratelimit-remaining-tokens:
+              $ref: "#/components/headers/XRateLimitRemainingTokens"
+            x-ratelimit-reset-tokens:
+              $ref: "#/components/headers/XRateLimitResetTokens"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RerankResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/ModelNotAllowed"
+        "429":
+          $ref: "#/components/responses/QuotaExceeded"
+        "501":
+          $ref: "#/components/responses/ProviderCapabilityNotSupported"
+        "502":
+          $ref: "#/components/responses/ProviderError"
   /v1/systemone:
     post:
       operationId: createSystemOne
@@ -534,6 +582,12 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "403":
           $ref: "#/components/responses/ModelNotAllowed"
+        "409":
+          description: Configured embedding routes disagree on the vector space.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "429":
           $ref: "#/components/responses/QuotaExceeded"
         "501":
@@ -2418,10 +2472,64 @@ components:
       properties:
         input_tokens:
           type: integer
+    RerankRequest:
+      type: object
+      additionalProperties: false
+      required: [model, query, documents]
+      properties:
+        model:
+          type: string
+        query:
+          type: string
+          minLength: 1
+        documents:
+          type: array
+          minItems: 1
+          maxItems: 2048
+          items:
+            type: string
+            minLength: 1
+        top_n:
+          type: integer
+          minimum: 1
+        return_documents:
+          type: boolean
+        instruction:
+          type: string
+        truncation:
+          type: boolean
+    RerankResponse:
+      type: object
+      required: [model, results]
+      properties:
+        model:
+          type: string
+        results:
+          type: array
+          items:
+            type: object
+            required: [index, relevance_score]
+            properties:
+              index:
+                type: integer
+                minimum: 0
+              relevance_score:
+                type: number
+              document:
+                type: object
+                properties:
+                  text:
+                    type: string
+        usage:
+          type: object
+          additionalProperties: true
+        meta:
+          type: object
+          additionalProperties: true
     EmbeddingsRequest:
       type: object
       required: [model, input]
-      additionalProperties: true
+      additionalProperties: false
       properties:
         model:
           type: string
@@ -2432,6 +2540,27 @@ components:
               items: {}
         encoding_format:
           type: string
+          enum: [float, base64]
+        dimensions:
+          type: integer
+          minimum: 1
+          maximum: 65536
+        input_type:
+          type: string
+          enum: [query, document]
+        task:
+          type: string
+        normalized:
+          type: boolean
+        truncation:
+          type: boolean
+        late_chunking:
+          type: boolean
+        user:
+          type: string
+        stream:
+          type: boolean
+          const: false
     EmbeddingsResponse:
       type: object
       required: [object, data]

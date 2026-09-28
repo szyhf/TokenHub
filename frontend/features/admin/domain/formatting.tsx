@@ -406,6 +406,8 @@ export function formatModelPrice(model: ProviderCatalogModel) {
 
 export function modelToForm(item: Model) {
   return {
+    retrieval_pricing_confirmed: item.metadata?.retrieval_pricing_confirmed ?? "false",
+    search_unit_price_usd: item.metadata?.search_unit_price_usd ?? "",
     ...stringifyForm(item),
     display_name: modelDisplayName(item.metadata, ""),
     cache_read_price_usd_per_1m: (item.cache_read_price_usd_per_1m || item.metadata?.cache_read_price_configured === "true")

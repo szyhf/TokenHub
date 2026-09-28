@@ -41,3 +41,5 @@
 @import "./styles/legacy/routing-policies.css";
 @import "./styles/legacy/api-key-usage.css";
 @import "./styles/legacy/semantic-routing.css";
+
+@import "./styles/redesign/retrieval-readability.css";

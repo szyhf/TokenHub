@@ -180,25 +180,8 @@ func (a MockAdapter) Responses(ctx context.Context, provider Provider, providerM
 }
 
 func (a MockAdapter) Embeddings(ctx context.Context, provider Provider, providerModel string, req EmbeddingsRequest) (any, Usage, error) {
-	input := EmbeddingInputText(req.Input)
-	vector := deterministicEmbedding(input, 8)
-	usage := Usage{PromptTokens: EstimateTextTokens(input)}
-	usage.TotalTokens = usage.PromptTokens
-	return map[string]any{
-		"object": "list",
-		"model":  req.Model,
-		"data": []map[string]any{
-			{
-				"object":    "embedding",
-				"index":     0,
-				"embedding": vector,
-			},
-		},
-		"usage": map[string]any{
-			"prompt_tokens": usage.PromptTokens,
-			"total_tokens":  usage.TotalTokens,
-		},
-	}, usage, nil
+	return a.textEmbeddings(req)
+
 }
 
 // preservesReasoningContent reports whether an OpenAI-compatible upstream
@@ -271,12 +254,8 @@ func (c openAICompatibleCore) chatStream(ctx context.Context, provider Provider,
 }
 
 func (c openAICompatibleCore) embeddings(ctx context.Context, provider Provider, providerModel string, req EmbeddingsRequest) (any, Usage, error) {
-	req.Model = providerModel
-	var body map[string]any
-	if err := c.doJSON(ctx, provider, http.MethodPost, providerModel, "/embeddings", req, &body); err != nil {
-		return nil, Usage{}, err
-	}
-	return body, usageFromMap(body), nil
+	return c.textEmbeddings(ctx, provider, providerModel, req)
+
 }
 
 func (c openAICompatibleCore) doJSON(ctx context.Context, provider Provider, method string, model string, endpoint string, payload any, target any) error {
@@ -717,31 +696,8 @@ func (a GeminiAdapter) Responses(ctx context.Context, provider Provider, provide
 }
 
 func (a GeminiAdapter) Embeddings(ctx context.Context, provider Provider, providerModel string, req EmbeddingsRequest) (any, Usage, error) {
-	payload := map[string]any{
-		"content": map[string]any{
-			"parts": []map[string]any{{"text": EmbeddingInputText(req.Input)}},
-		},
-	}
-	var body map[string]any
-	if err := a.doJSON(ctx, provider, providerModel, ":embedContent", payload, &body); err != nil {
-		return nil, Usage{}, err
-	}
-	values := []any{}
-	if embedding, ok := body["embedding"].(map[string]any); ok {
-		if raw, ok := embedding["values"].([]any); ok {
-			values = raw
-		}
-	}
-	usage := Usage{PromptTokens: EstimateTextTokens(EmbeddingInputText(req.Input))}
-	usage.TotalTokens = usage.PromptTokens
-	return map[string]any{
-		"object": "list",
-		"model":  req.Model,
-		"data": []map[string]any{
-			{"object": "embedding", "index": 0, "embedding": values},
-		},
-		"usage": map[string]any{"prompt_tokens": usage.PromptTokens, "total_tokens": usage.TotalTokens},
-	}, usage, nil
+	return a.textEmbeddings(ctx, provider, providerModel, req)
+
 }
 
 func (a GeminiAdapter) doJSON(ctx context.Context, provider Provider, model string, action string, payload any, target any) error {

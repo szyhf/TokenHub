@@ -13,7 +13,10 @@ import (
 // both dialects.
 func providerTenancyMigration() dbschema.Migration {
 	return dbschema.Migration{
-		Version:          7,
+		// Version 7 belongs to add-image-job-worker-instance on the main
+		// line; this expansion registers as 8 so the frozen registry keeps
+		// one migration per version.
+		Version:          8,
 		Name:             "add-provider-owner-team",
 		Go:               addProviderOwnerTeamColumn,
 		ChecksumOverride: "tokenhub-schema-provider-owner-team-v1",

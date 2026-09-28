@@ -79,11 +79,12 @@ TokenHub は、日常的なモデル利用、チームガバナンス、プラ�
 - コストガバナンス: Token 予算、Provider 支出比較、モデル選択、将来的なキャッシュによる節約戦略を扱います。
 - OAuth/OIDC によるエンタープライズサインイン、RBAC、監査証跡に対応する ID ソース設定。
 - OpenAI-Compatible モデル API: `/v1/chat/completions`、`/v1/responses`、`/v1/embeddings`。Anthropic Messages API: `/v1/messages`、`/v1/messages/count_tokens`。
+- テキスト検索: `/v1/embeddings` の[密ベクトル埋め込み](docs/ja/embeddings.md)と `/v1/rerank` の[文書再ランキング](docs/ja/rerank.md)。実際の Provider プロトコルを設定できます。
 - OpenAI-Compatible の画像生成および参照画像編集 API: `/v1/images/generations`、`/v1/images/edits`。非同期ジョブとサーバー側の画像保持に対応します。
 - クリーンなコンソール: ロール別ナビゲーション、グローバル検索、ライト/ダーク切り替え、左ナビ + 右詳細の API ドキュメント。
 - SQLite-first のプライベートデプロイ向けに、ネイティブ systemd と Docker Compose の両方をサポート。
 - PostgreSQL はマルチインスタンス構成に対応します。リモート PostgreSQL で状態を共有し、フロントエンドとバックエンドのレプリカを水平スケールできるほか、コネクションプールも設定できます。[デプロイガイド](docs/ja/deployment.md)を参照してください。
-- 管理コンソールは英語、中国語、日本語の切り替えに対応。
+- 管理コンソールは英語、中国語、日本語、ロシア語の切り替えに対応。
 
 ## Provider エコシステム
 
@@ -217,15 +218,15 @@ TokenHub は、実際のエンタープライズ利用からのフィードバ�
       </a>
     </td>
     <td align="center" valign="top" width="12.5%">
-      <a href="https://github.com/CLukeLi">
-        <img src="https://avatars.githubusercontent.com/u/252523101?v=4" width="80px" alt="CLukeLi" />
-        <br /><sub><b>CLukeLi</b></sub>
-      </a>
-    </td>
-    <td align="center" valign="top" width="12.5%">
       <a href="https://github.com/jackiesre721">
         <img src="https://avatars.githubusercontent.com/u/8868514?v=4" width="80px" alt="jackiesre721" />
         <br /><sub><b>jackiesre721</b></sub>
+      </a>
+    </td>
+    <td align="center" valign="top" width="12.5%">
+      <a href="https://github.com/CLukeLi">
+        <img src="https://avatars.githubusercontent.com/u/252523101?v=4" width="80px" alt="CLukeLi" />
+        <br /><sub><b>CLukeLi</b></sub>
       </a>
     </td>
     <td align="center" valign="top" width="12.5%">

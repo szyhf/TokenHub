@@ -17,6 +17,7 @@ func (s *Server) routes() {
 	s.registerSingleMethodRoute(http.MethodGet, "/docs/swagger-ui-dist.LICENSE", s.handleDocsSwaggerUIDistLicense, jsonMethodNotAllowed(http.MethodGet))
 	s.registerSingleMethodRoute(http.MethodGet, "/openapi.json", s.handleOpenAPIJSON, jsonMethodNotAllowed(http.MethodGet))
 	s.registerSingleMethodRoute(http.MethodGet, "/openapi.yaml", s.handleOpenAPIYAML, jsonMethodNotAllowed(http.MethodGet))
+	s.registerSingleMethodRoute(http.MethodPost, "/api/admin/playground/rerank", s.handleAdminRerankTest, s.adminMethodNotAllowed("provider", http.MethodPost))
 	s.registerModelRoutes()
 	// The in-flight gauge covers exactly the endpoints that route to an upstream, so
 	// it stays comparable with requests_total. Catalog lookups and count_tokens are
@@ -33,6 +34,7 @@ func (s *Server) routes() {
 	s.registerPublicDirectMethodRoute(http.MethodPost, "/v1/responses/compact", s.gatewayInFlight(s.handleResponsesCompact))
 	s.mux.HandleFunc(http.MethodGet+" /v1/responses/compact", jsonMethodNotAllowed(http.MethodPost))
 	s.mux.HandleFunc("/v1/responses/", s.handleResponseJob)
+	s.registerPublicSingleMethodRoute(http.MethodPost, "/v1/rerank", s.gatewayInFlight(s.handleRerank), jsonMethodNotAllowed(http.MethodPost))
 	s.registerPublicSingleMethodRoute(http.MethodPost, "/v1/systemone", s.gatewayInFlight(s.handleSystemOne), jsonMethodNotAllowed(http.MethodPost))
 	s.registerPublicSingleMethodRoute(http.MethodPost, "/v1/embeddings", s.gatewayInFlight(s.handleEmbeddings), jsonMethodNotAllowed(http.MethodPost))
 	s.registerPublicSingleMethodRoute(http.MethodPost, "/v1/images/generations", s.handleImageGenerations, jsonMethodNotAllowed(http.MethodPost))

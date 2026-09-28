@@ -12,6 +12,8 @@ func gatewayRequestProtocol(path string) string {
 		return providerRouteProtocolResponses
 	case strings.Contains(path, "/images/"):
 		return providerRouteProtocolImageGeneration
+	case strings.Contains(path, "/rerank"):
+		return providerRouteProtocolRerank
 	case strings.Contains(path, "/embeddings"):
 		return providerRouteProtocolEmbeddings
 	case strings.Contains(path, "/v1beta/"):

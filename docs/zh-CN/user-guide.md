@@ -20,7 +20,7 @@ Language: [English](../user-guide.md) | 简体中文 | [日本語](../ja/user-gu
 1. 打开 **Key 管理**，创建或复制 API Key。新 Key 只展示一次。
 2. TokenHub 会自动把个人 Key 归入已分配项目；尚未分配项目时归入平台默认项目。
 3. 调用 `GET /v1/models` 查看这个 Key 可用的模型列表。
-4. 选择一个模型 ID，调用 `POST /v1/chat/completions`、`POST /v1/messages`、`POST /v1/responses` 或 `POST /v1/embeddings`。
+4. 选择一个模型 ID，调用 `POST /v1/chat/completions`、`POST /v1/messages`、`POST /v1/responses`、`POST /v1/embeddings`、`POST /v1/rerank`。
 5. 在 **用量统计** 和 **请求日志** 中查看请求、Token、成本和错误。
 
 控制台中的「接口文档」仍是面向上手的引导页。需要完整的交互式和机器可读网关合约时，请在私有部署中打开 `http://localhost:8080/docs`，或将 `http://localhost:8080/openapi.json` 导入 API 客户端、SDK 生成器、测试工具或企业 API 目录。文档页中输入的项目 Key 只保存在浏览器内存中。

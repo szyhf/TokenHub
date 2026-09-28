@@ -83,6 +83,9 @@ func (s *GormStore) ListModels() []Model {
 }
 
 func (s *GormStore) UpdateModel(name string, patch Model) (Model, error) {
+	if err := validateRetrievalPriceMetadata(patch.Metadata); err != nil {
+		return Model{}, err
+	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -605,14 +608,7 @@ func (s *GormStore) finishCallTransaction(tx *gorm.DB, call CallContext, route R
 			}
 			liveKeyExists = false
 		}
-		providerTokens := meteredTokens(usage)
-		actualTokens := usage.RateLimitTokens
-		if actualTokens <= 0 {
-			actualTokens = providerTokens
-		}
-		if call.StreamOutputCommitted && providerTokens == 0 && actualTokens < call.ReservedTokens {
-			actualTokens = call.ReservedTokens
-		}
+		actualTokens := quotaActualTokens(call, usage)
 		quotaUsage := usage
 		quotaUsage.TotalTokens = actualTokens
 		if !call.RedisBillingAdmitted {
@@ -692,7 +688,7 @@ func (s *GormStore) finishCallTransaction(tx *gorm.DB, call CallContext, route R
 			}
 		}
 	}
-	if usage.TotalTokens > 0 || usage.CostUSD > 0 {
+	if usage.TotalTokens > 0 || usage.CostUSD > 0 || usage.ProviderCostUSD > 0 || usage.RetrievalEvidence != nil {
 		if err := tx.Create(newUsageRecord(call, route, usage, now)).Error; err != nil {
 			return err
 		}
@@ -1221,74 +1217,6 @@ func (s *GormStore) ListImageJobsForAudit(query ImageJobAuditQuery) []ImageJob {
 		jobs[index].RevisedPrompt = s.decryptSecret(jobs[index].RevisedPromptCiphertext)
 	}
 	return jobs
-}
-
-func (s *GormStore) FailUnfinishedImageJobs(code string, message string) ([]ImageJob, error) {
-	now := time.Now().UTC()
-	var jobs []ImageJob
-	err := s.db.Transaction(func(tx *gorm.DB) error {
-		unfinished := []string{imageJobStatusQueued, imageJobStatusRunning}
-		if err := tx.Where("status IN ?", unfinished).Find(&jobs).Error; err != nil {
-			return err
-		}
-		if len(jobs) == 0 {
-			return nil
-		}
-		if err := tx.Model(&ImageJob{}).
-			Where("status IN ?", unfinished).
-			Updates(map[string]any{
-				"status":        imageJobStatusFailed,
-				"error_code":    code,
-				"error_message": message,
-				"completed_at":  now,
-			}).Error; err != nil {
-			return err
-		}
-		for _, job := range jobs {
-			if err := s.rollbackImageJobAdmission(tx, job); err != nil {
-				return err
-			}
-			if strings.TrimSpace(job.RequestID) == "" {
-				continue
-			}
-			if err := s.deleteRequestConcurrencyLeases(tx, job.RequestID); err != nil {
-				return err
-			}
-			var count int64
-			if err := tx.Model(&RequestLog{}).Where("request_id = ?", job.RequestID).Count(&count).Error; err != nil {
-				return err
-			}
-			if count == 0 {
-				if err := tx.Create(&RequestLog{
-					ID:               NewID("log"),
-					RequestID:        job.RequestID,
-					ProjectID:        job.ProjectID,
-					APIKeyID:         job.APIKeyID,
-					AttributedUserID: job.AttributedUserID,
-					ModelName:        job.Model,
-					StatusCode:       http.StatusServiceUnavailable,
-					ErrorCode:        code,
-					LatencyMS:        latencyMillis(now.Sub(job.CreatedAt)),
-					CreatedAt:        now,
-				}).Error; err != nil {
-					return err
-				}
-			}
-		}
-		return nil
-	})
-	if err != nil {
-		return nil, err
-	}
-	for index := range jobs {
-		jobs[index].Status = imageJobStatusFailed
-		jobs[index].ErrorCode = code
-		jobs[index].ErrorMessage = message
-		jobs[index].CompletedAt = &now
-		jobs[index].Prompt = s.decryptSecret(jobs[index].PromptCiphertext)
-		jobs[index].RevisedPrompt = s.decryptSecret(jobs[index].RevisedPromptCiphertext)
-	}
-	return jobs, nil
 }
 
 func (s *GormStore) UpdateImageJob(job ImageJob, revisedPrompt string) error {

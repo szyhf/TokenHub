@@ -110,6 +110,7 @@ func registerBuiltinProviderAdapters(registry *AdapterRegistry, adapters map[str
 			AdapterCapabilityResponses,
 			AdapterCapabilityResponseStream,
 			AdapterCapabilityEmbeddings,
+			AdapterCapabilityRerank,
 			AdapterCapabilityProbe,
 		},
 	}); err != nil {
@@ -329,6 +330,9 @@ func registerBuiltinProviderAdapters(registry *AdapterRegistry, adapters map[str
 				AdapterCapabilityEmbeddings,
 				AdapterCapabilityProbe,
 			},
+		}
+		if adapterType == "qwen" || adapterType == "local" {
+			adapter.capabilities = append(adapter.capabilities, AdapterCapabilityRerank)
 		}
 		if adapterType == "deepseek" {
 			adapter.preserveReasoningContent = boolPointer(true)

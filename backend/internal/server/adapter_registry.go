@@ -18,6 +18,7 @@ const (
 	AdapterCapabilityResponses      AdapterCapability = "responses"
 	AdapterCapabilityResponseStream AdapterCapability = "responses_stream"
 	AdapterCapabilityEmbeddings     AdapterCapability = "embeddings"
+	AdapterCapabilityRerank         AdapterCapability = "rerank"
 	AdapterCapabilityModels         AdapterCapability = "models"
 	AdapterCapabilityProbe          AdapterCapability = "probe"
 	AdapterCapabilityQuota          AdapterCapability = "quota"

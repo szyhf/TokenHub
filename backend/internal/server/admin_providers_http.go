@@ -929,6 +929,10 @@ func (s *Server) serveAdminModelsPost(w http.ResponseWriter, r *http.Request, us
 		}
 		preparedRoutes = append(preparedRoutes, route)
 	}
+	if err := s.validateInitialEmbeddingRoutes(r.Context(), req.Model, preparedRoutes); err != nil {
+		writeError(w, r, err)
+		return
+	}
 	req.Model = withExternalModelRole(req.Model)
 	model, err := s.store.CreateModelWithRoutes(req.Model, preparedRoutes)
 	if err != nil {
@@ -1250,6 +1254,9 @@ func (s *Server) validateRouteAdapterForModel(route ModelRoute, pendingModel *Mo
 	descriptor, ok := s.adapterRegistry.Describe(provider.Type)
 	if !ok {
 		return NewHTTPError(http.StatusBadRequest, "provider_adapter_missing", "Route provider adapter is not registered")
+	}
+	if err := s.validateRetrievalRoute(route, pendingModel, provider); err != nil {
+		return err
 	}
 	if err := s.validateRouteModelProtocol(route.ModelName, pendingModel, descriptor); err != nil {
 		return err

@@ -249,8 +249,8 @@ export function RouteStrategyHint({ data }: { data: AppData }) {
         <span>{tx("添加线路时只能选择 Provider 已引入的模型。渠道成本来自 Provider 模型，对外统一价格来自模型目录；这里仅决定映射和流量策略。")}</span>
       </div>
       <div className="workflow-hint-stats">
-        <span>{activeRoutes} {tx("条启用线路")}</span>
-        <span>{data.providerModels.length} {tx("个可选上游模型")}</span>
+        <span>{countWithLabel(activeRoutes, "条启用线路")}</span>
+        <span>{countWithLabel(data.providerModels.length, "个可选上游模型")}</span>
       </div>
     </div>
   );

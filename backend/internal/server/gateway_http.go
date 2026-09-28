@@ -754,7 +754,7 @@ func executeRoutedWithStore[T any](
 				route = prepared
 			}
 			resp, usage, err := call(leaseCtx, route, omitReasoningEffort, len(attempts)+1)
-			cumulativeTokens = saturatingAddNonNegative(cumulativeTokens, meteredTokens(usage))
+			cumulativeTokens = saturatingAddNonNegative(cumulativeTokens, retrievalAttemptQuotaTokens(routed.Call, usage))
 			usage.RateLimitTokens = cumulativeTokens
 			attemptEndedAt := time.Now()
 			latencyMS := maxInt64(1, attemptEndedAt.Sub(attemptStartedAt).Milliseconds())

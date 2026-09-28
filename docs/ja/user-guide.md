@@ -20,7 +20,7 @@ Language: [English](../user-guide.md) | [简体中文](../zh-CN/user-guide.md) |
 1. **Key Management** を開き、API Key を作成またはコピーします。新しい Key は一度だけ表示されます。
 2. TokenHub は個人 Key を割り当て済み Project に自動帰属し、未割り当ての場合はプラットフォームのデフォルト Project に帰属します。
 3. `GET /v1/models` で、その Key から利用できるモデル一覧を確認します。
-4. モデル ID を選び、`POST /v1/chat/completions`、`POST /v1/messages`、`POST /v1/responses`、`POST /v1/embeddings` を呼び出します。
+4. モデル ID を選び、`POST /v1/chat/completions`、`POST /v1/messages`、`POST /v1/responses`、`POST /v1/embeddings`、`POST /v1/rerank` を呼び出します。
 5. **Usage Analytics** と **Request Logs** でリクエスト、Token、コスト、エラーを確認します。
 
 コンソールの **API Documentation** は、引き続きオンボーディング向けのガイド画面です。完全な対話型かつ機械可読のゲートウェイ契約が必要な場合は、プライベートデプロイで `http://localhost:8080/docs` を開くか、`http://localhost:8080/openapi.json` を API クライアント、SDK ジェネレーター、テストツール、または企業 API カタログへ取り込んでください。ドキュメントページに入力した Project Key はブラウザーのメモリ内だけに保持されます。

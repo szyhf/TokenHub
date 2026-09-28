@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { type AppData, type Model, type ModelRoute, type ModelRoutePolicy, type ResourceConfig, type ViewKey } from "../core/types";
 import { modelCatalogFilterLabel, modelCategory, modelCategoryInitial, modelCategoryLabel, modelCategoryTabs, notificationChannelTabs } from "../domain/catalog";
 import { filterRouteModels, modelIsInDirectory, modelRoutesFor, reorderRoutes, routeModelCategories } from "../domain/entities";
-import { tx } from "../i18n/runtime";
+import { countRatioWithUnit, countWithLabel, tx } from "../i18n/runtime";
 import { DataSection, StatusPill } from "../shared/ui";
 import { modelBrandIconSource } from "./database-model-pricing";
 import { ModelRoutingPolicyEditor, modelRoutePolicySignature } from "./model-routing-policy";
@@ -152,7 +152,7 @@ export function RouteStrategyView({
         <aside className="model-catalog-sidebar">
           <div className="model-catalog-sidebar-head">
             <strong>{tx("统一模型")}</strong>
-            <span>{configuredCount} {tx("个已配置路由")}</span>
+            <span>{countWithLabel(configuredCount, "个已配置路由")}</span>
           </div>
           <div className="model-provider-list">
             {categories.map((item) => (
@@ -207,7 +207,7 @@ export function RouteStrategyView({
           <div className="model-catalog-summary">
             <span>{tx(modelCatalogFilterLabel(categories, category))}</span>
             <strong>{filtered.length}</strong>
-            <em>{tx("个模型")} · {activeRouteCount}/{data.routes.length} {tx("条启用线路")}</em>
+            <em>{tx("个模型")} · {countRatioWithUnit(activeRouteCount, data.routes.length, "条启用线路", "active route", "件の有効ルート")}</em>
           </div>
 
           {filtered.length === 0 ? (

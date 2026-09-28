@@ -11,7 +11,7 @@ import { accountProviderCatalogCategory, accountProviderCatalogEntryFromProvider
 import { defaultProviderSystemPromptTransformPolicy, providerSystemPromptTransformPolicy } from "../domain/provider-attribution";
 import { customUpstreamConnectionKey, customUpstreamDiscoveryPayload, customUpstreamModelsAreCurrent, customUpstreamModelsVisible, defaultProviderTypeValue, providerAuthMode, providerAuthModeField, providerCatalogAPIKeyRequired, providerCatalogDiscoveryRouteID, providerCatalogSupportsModelPreview, providerCatalogUsesDiscoveryPreview, providerResourceBaseURLForProviderUpdate, providerTypeValue } from "../domain/provider-custom-upstream";
 import { providerCatalogModelIsSelectable } from "../domain/provider-model-selection";
-import { clearCustomValidity, countRatioWithUnit, countWithUnit, handleRequiredFieldInvalid, languageLocale, providerSaveMessage, tx } from "../i18n/runtime";
+import { clearCustomValidity, countRatioWithUnit, countWithLabel, countWithUnit, handleRequiredFieldInvalid, languageLocale, providerImportHintText, providerSaveMessage, tx } from "../i18n/runtime";
 import { adminFetch, isAuthExpiredError, providerPayload, providerResourcePayload, providerUpdatePayload, readAdminError } from "../resources/payloads";
 import { assertProviderAccountResourceReady, defaultProviderResourceName, exchangeProviderAccountOAuthCode, generateProviderAccountOAuthURL, providerAccountTokenSummary, providerCreateAccountManualTokenFields, providerCreateAccountRuntimeFields, providerPluginActionForCapability, providerResourceActionSelection, providerResourceDraftDefaults, providerResourceSelectionSupportsAction, runProviderResourcePluginAction } from "../resources/provider-model-config";
 import { providerTypeManagedHeaders, type ProviderTypeOption } from "../shared/ui";
@@ -1552,7 +1552,7 @@ export function ProviderUpsertModal({
                 <strong>{tx(mode === "edit" ? "继续引入模型" : "引入 Provider 上游模型")}</strong>
                 <span>{tx("勾选结果只进入当前 Provider 的模型库存，不会创建对外模型或路由。")}</span>
               </div>
-              <strong>{selectedModelCount} {tx("个待引入")}</strong>
+              <strong>{countWithLabel(selectedModelCount, "个待引入")}</strong>
             </div>
 
             <div className="provider-model-head">
@@ -1599,9 +1599,7 @@ export function ProviderUpsertModal({
               })}
             </div>
             <p className="provider-import-hint">
-              {selectedModelCount > 0
-                ? `${tx("保存后会引入")} ${selectedModelCount} ${tx("个上游模型；请前往模型目录创建对外模型、设置统一价格并选择初始线路。")}`
-                : tx("当前没有选择新模型，保存后不会改变 Provider 模型库存。")}
+              {providerImportHintText(selectedModelCount)}
             </p>
               </>
             ) : null}

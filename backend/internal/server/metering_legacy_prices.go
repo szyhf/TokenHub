@@ -10,6 +10,7 @@ import (
 // a configured cache-write price, or an explicit period override proves a rate.
 // Exact cards retain their own presence and may always declare free categories.
 func providerLegacyMeteringRates(original, resolved Model, rates metering.Rates, at time.Time) metering.Rates {
+	confirmedRetrieval := (original.Modality == "embedding" || original.Modality == "rerank") && original.Metadata["retrieval_pricing_confirmed"] == "true"
 	var period ModelPricingPeriod
 	for _, candidate := range original.PricingPeriods {
 		if pricingPeriodMatches(candidate, at) {
@@ -17,7 +18,7 @@ func providerLegacyMeteringRates(original, resolved Model, rates metering.Rates,
 			break
 		}
 	}
-	if resolved.InputPriceUSDPer1M == 0 && period.InputPriceUSDPer1M == nil {
+	if resolved.InputPriceUSDPer1M == 0 && period.InputPriceUSDPer1M == nil && !confirmedRetrieval {
 		rates.Input = ""
 	}
 	if resolved.OutputPriceUSDPer1M == 0 && period.OutputPriceUSDPer1M == nil {

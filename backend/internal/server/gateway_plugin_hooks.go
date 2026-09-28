@@ -167,13 +167,12 @@ func applyEmbeddingsGatewayRequestPatch(req *EmbeddingsRequest, data json.RawMes
 	if req == nil {
 		return NewHTTPError(http.StatusBadGateway, "gateway_hook_patch_invalid", "Gateway plugin returned an invalid request patch")
 	}
-	originalModel := req.Model
 	var patched EmbeddingsRequest
 	if err := decodeGatewayHookRequestPatch(data, &patched); err != nil {
 		return err
 	}
-	if strings.TrimSpace(patched.Model) != originalModel {
-		return NewHTTPError(http.StatusBadGateway, "gateway_hook_patch_invalid", "Gateway plugin cannot change the requested model")
+	if err := validateEmbeddingPatch(*req, patched); err != nil {
+		return err
 	}
 	*req = patched
 	return nil

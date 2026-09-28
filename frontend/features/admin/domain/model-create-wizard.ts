@@ -68,6 +68,8 @@ export function externalModelTemplateValues(model: ReferenceModelTemplate): Reco
     cache_write_1h_price_usd_per_1m: formNumber(model.cache_write_1h_price_usd_per_1m),
     output_price_usd_per_1m: formNumber(model.output_price_usd_per_1m),
     embedding_price_usd_per_1m: formNumber(model.embedding_price_usd_per_1m),
+    search_unit_price_usd: model.metadata?.search_unit_price_usd ?? "",
+    retrieval_pricing_confirmed: model.metadata?.retrieval_pricing_confirmed ?? "false",
     pricing_periods: model.pricing_periods?.length ? JSON.stringify(model.pricing_periods, null, 2) : "",
     capabilities: (model.capabilities ?? []).join(", "),
     supported_parameters: (model.supported_parameters ?? []).join(", "),

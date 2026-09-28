@@ -545,6 +545,8 @@ export function modelConfig(): ResourceConfig<Model> {
         visible: (values) => values.modality !== "embedding",
       },
       { key: "output_price_usd_per_1m", label: "对外输出价 USD/1M", type: "number" },
+      { key: "search_unit_price_usd", label: "搜索单元价格 USD/次", type: "number", visible: (values) => values.modality === "rerank" },
+      { key: "retrieval_pricing_confirmed", label: "确认检索模型收费配置（包含免费价格）", type: "boolean", visible: (values) => values.modality === "rerank" || values.modality === "embedding" },
       { key: "embedding_price_usd_per_1m", label: "对外 Embedding 价 USD/1M", type: "number" },
       {
         key: "pricing_periods",

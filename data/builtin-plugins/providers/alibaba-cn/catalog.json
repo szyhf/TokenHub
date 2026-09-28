@@ -4364,6 +4364,26 @@
         }
       },
       "type": "chat"
+    },
+    {
+      "id": "gte-rerank-v2",
+      "name": "gte-rerank-v2",
+      "display_name": "gte-rerank-v2",
+      "type": "rerank",
+      "family": "gte",
+      "modalities": {
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ]
+      },
+      "metadata": {
+        "endpoints": "rerank",
+        "source": "official-documentation",
+        "pricing_status": "unverified"
+      }
     }
   ]
 }

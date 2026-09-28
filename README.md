@@ -79,11 +79,12 @@ TokenHub separates everyday model usage, team governance, and platform administr
 - Cost controls for token budgets, provider spend comparison, model choice, and future caching-driven savings.
 - Identity source configuration for OAuth/OIDC enterprise sign-in, plus RBAC and audit trails.
 - OpenAI-compatible model APIs: `/v1/chat/completions`, `/v1/responses`, `/v1/embeddings`; Anthropic Messages APIs: `/v1/messages`, `/v1/messages/count_tokens`.
+- Text retrieval: [dense embeddings](docs/embeddings.md) through `/v1/embeddings` and [document reranking](docs/rerank.md) through `/v1/rerank`, with provider-specific protocol configuration.
 - OpenAI-compatible image generation and reference-image editing through `/v1/images/generations` and `/v1/images/edits`, with asynchronous jobs and server-side image retention.
 - Clean console with compact role-aware navigation, global search, light/dark mode, and split-view API documentation.
 - SQLite-first private deployment with native systemd and Docker Compose options.
 - PostgreSQL supports multi-instance deployments: share state through remote PostgreSQL, scale frontend and backend replicas horizontally, and configure connection pools. See the [deployment guide](docs/deployment.md) and [PostgreSQL setup guide](docs/postgresql-setup.md).
-- Console language switching for English, Chinese, and Japanese.
+- Console language switching for English, Chinese, Japanese, and Russian.
 
 ## Provider Ecosystem
 
@@ -217,15 +218,15 @@ TokenHub grows through product feedback, gateway integrations, documentation, te
       </a>
     </td>
     <td align="center" valign="top" width="12.5%">
-      <a href="https://github.com/CLukeLi">
-        <img src="https://avatars.githubusercontent.com/u/252523101?v=4" width="80px" alt="CLukeLi" />
-        <br /><sub><b>CLukeLi</b></sub>
-      </a>
-    </td>
-    <td align="center" valign="top" width="12.5%">
       <a href="https://github.com/jackiesre721">
         <img src="https://avatars.githubusercontent.com/u/8868514?v=4" width="80px" alt="jackiesre721" />
         <br /><sub><b>jackiesre721</b></sub>
+      </a>
+    </td>
+    <td align="center" valign="top" width="12.5%">
+      <a href="https://github.com/CLukeLi">
+        <img src="https://avatars.githubusercontent.com/u/252523101?v=4" width="80px" alt="CLukeLi" />
+        <br /><sub><b>CLukeLi</b></sub>
       </a>
     </td>
     <td align="center" valign="top" width="12.5%">
